@@ -1,0 +1,7 @@
+<launch>
+  <node name="gscam_driver_adeept_pi" pkg="gscam" type="gscam" output="screen">
+    <param name="camera_name" value="adeept_pi"/>
+    <param name="gscam_config" value="raspivid -n -w 640 -h 480 -b 1000000 -fps 30 -t 0 -o | gst-launch-1.0 -v fdsrc ! video/x-raw,format=RGBx,framerate=30/1 ! videoconvert"/>
+    <param name="sync_sink" value="true"/>
+  </node>
+</launch>

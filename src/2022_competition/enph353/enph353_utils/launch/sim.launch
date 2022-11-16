@@ -1,0 +1,21 @@
+<launch>
+  <param name="/use_sim_time" value="true" />
+  <arg name="spawn_pedestrians" default="false"/>
+  <arg name="spawn_vehicles" default="false"/>
+
+	<include file="$(find gazebo_ros)/launch/empty_world.launch">
+		<env name="GAZEBO_RESOURCE_PATH" value="$(find enph353_gazebo)"/>
+		<env name="GAZEBO_MODEL_PATH" value="$(find enph353_gazebo)/models"/>
+		<arg name="world_name" value="$(find enph353_gazebo)/worlds/353.world"/>
+		<arg name="gui" value="true"/>
+	</include>
+
+	<include file="$(find enph353_utils)/launch/robots.launch"/>
+	<include file="$(find enph353_utils)/launch/npcs.launch">
+		<arg name="spawn_pedestrians" value="$(arg spawn_pedestrians)"/>
+		<arg name="spawn_vehicles" value="$(arg spawn_vehicles)"/>
+	</include>
+
+	<node pkg="enph353_gazebo" type="license_server.py" name="license_server" output="screen"/>
+
+</launch>

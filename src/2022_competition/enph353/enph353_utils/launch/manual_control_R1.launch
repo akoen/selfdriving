@@ -1,0 +1,5 @@
+<launch>
+	<group ns="R1">
+		<node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop_twist_keybaord" output="screen" launch-prefix="xterm -e"/>
+	</group>
+</launch>

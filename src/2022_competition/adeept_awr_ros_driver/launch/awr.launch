@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="adeept_awr_ros_driver" type="driver.py" name="adeept_driver" output="screen"/>
+</launch>

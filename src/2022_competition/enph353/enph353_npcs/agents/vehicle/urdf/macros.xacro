@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<robot name="vehicle" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:macro name="box_inertia" params="m w h d">
+        <inertial>
+          <mass value="${m}"/>
+          <inertia ixx="${m / 12.0 * (w*w + h*h)}" ixy="0.0" ixz="0.0" iyy="${m / 12.0 * (d*d + h*h)}" iyz="0.0" izz="${m / 12.0 * (w*w + d*d)}"/>
+        </inertial>
+    </xacro:macro>
+
+    <xacro:macro name="sphere_inertia" params="m r">
+        <inertial>
+        <mass value="${m}"/>
+        <inertia ixx="${2.0*m*(r*r)/5.0}" ixy="0.0" ixz="0.0" iyy="${2.0*m*(r*r)/5.0}" iyz="0.0" izz="${2.0*m*(r*r)/5.0}"/>
+        </inertial>
+    </xacro:macro>
+
+    <xacro:macro name="cylinder_inertia" params="m r h">
+        <inertial>
+          <mass value="${m}"/>
+          <inertia ixx="${m*(3*r*r+h*h)/12}" ixy = "0" ixz = "0" iyy="${m*(3*r*r+h*h)/12}" iyz = "0" izz="${m*r*r/2}"/> 
+        </inertial>
+    </xacro:macro>
+ 
+    <xacro:macro name="wheel" params="prefix reflect_x reflect_y mass">
+        <link name="${prefix}_wheel">
+          <visual>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+            <geometry>
+              <!-- <cylinder radius="${wheel_radius}" length="${wheel_width}"/> -->
+              <cylinder radius="1e-6" length="1e-6"/>
+            </geometry>
+          </visual>
+          <collision>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+            <geometry>
+              <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+            </geometry>
+          </collision>
+          <xacro:cylinder_inertia m="${mass}" r="${wheel_radius}" h="${wheel_width}"/>
+        </link>
+ 
+        <joint name="${prefix}_wheel_joint" type="continuous">
+          <axis xyz="0 1 0" rpy="0 0 0" />
+          <parent link="base_link"/>
+          <child link="${prefix}_wheel"/>
+          <origin xyz="${wheel_joint_offset_x*reflect_x} ${((base_width/2)+base_wheel_gap)*reflect_y} ${wheel_joint_offset_z}" rpy="0 0 0"/>
+        </joint>
+
+        <gazebo reference="${prefix}_wheel_link" >
+            <mu1>1.0</mu1>
+            <mu2>1.0</mu2>
+        </gazebo>
+    </xacro:macro>
+</robot>

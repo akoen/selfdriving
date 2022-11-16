@@ -1,0 +1,21 @@
+<launch>
+
+	<group ns="R1">
+		<param name="tf_prefix" value="R1_tf" />
+		<include file="$(find adeept_awr_gazebo)/launch/adeept_awr_urdf.launch">
+			<arg name="init_pose" value="-x 0.0 -y -0.85 -z 0.5 -R 0.0 -P 0.0 -Y 4.71" />
+			<arg name="robot_name"  value="R1" />
+		</include>
+		<include file="$(find enph353_utils)/launch/desktop.launch"/>
+	</group>
+<!--
+	<group ns="B1">
+		<param name="tf_prefix" value="B1_tf" />
+		<include file="$(find adeept_awr_gazebo)/launch/adeept_awr_urdf.launch">
+			<arg name="init_pose" value="-x 0.0 -y 0.627 -z 1.0 -R 0.0 -P 0.0 -Y 1.57" />
+			<arg name="robot_name"  value="B1" />
+		</include>
+		<include file="$(find enph353_utils)/launch/desktop.launch"/>
+	</group>
+-->
+</launch>

@@ -1,0 +1,11 @@
+<launch>
+ 
+  <!-- Start the GSCAM node -->
+	<arg name="cam_name" value="overhead_camera" />
+	<env name="GSCAM_CONFIG" value="udpsrc port=5000 ! application/x-rtp, media=video, clock-rate=90000, encoding-name=JPEG, payload=26 ! rtpjpegdepay ! jpegdec ! videoconvert" />
+	<node pkg="gscam" type="gscam" name="$(arg cam_name)">
+		<param name="camera_name" value="$(arg cam_name)" />
+		<remap from="camera/image_raw" to="$(arg cam_name)/image_raw" />
+	</node>
+	<include file="$(find enph353_utils)/launch/desktop.launch"/>
+</launch>

@@ -1,0 +1,26 @@
+<launch>
+  <arg name="robot_name"/>
+  <arg name="init_pose"/>
+  <arg name="pose_a_x"/>
+  <arg name="pose_a_y"/>
+  <arg name="pose_b_x"/>
+  <arg name="pose_b_y"/>
+  <arg name="model" default="$(find enph353_npcs)/agents/pedestrian/urdf/pedestrian.urdf"/>
+
+  <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
+
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
+        args="$(arg init_pose) -unpause -urdf -model $(arg robot_name) -param robot_description" respawn="false" output="screen" />
+
+  <node pkg="robot_state_publisher" type="robot_state_publisher"  name="robot_state_publisher">
+    <param name="publish_frequency" type="double" value="30" />
+  </node>
+
+  <node pkg="enph353_npcs" type="ped_move_point_to_point.py" name="crosswalk_controller" output="screen">
+  	<param name="name" value="$(arg robot_name)"/>
+  	<param name="pose_a_x" value="$(arg pose_a_x)"/>
+  	<param name="pose_a_y" value="$(arg pose_a_y)"/>
+  	<param name="pose_b_x" value="$(arg pose_b_x)"/>
+  	<param name="pose_b_y" value="$(arg pose_b_y)"/>
+  </node>
+</launch>

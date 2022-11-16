@@ -1,0 +1,22 @@
+topics:
+-
+  name    : joy
+  topic   : joy_vel
+  timeout : 0.5
+  priority: 3
+-
+  name    : key
+  topic   : key_vel
+  timeout : 0.5
+  priority: 2
+-
+  name    : enph_ai
+  topic   : ai_vel
+  timeout : 0.5
+  priority: 1
+
+locks:
+- name    : e_stop
+  topic   : e_stop
+  timeout : 0.0
+  priority: 255

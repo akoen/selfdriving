@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<robot name="pedestrian">
+
+  <link name="base_link">
+    <inertial>
+      <mass value="0.1" />
+      <inertia ixx="0.1" ixy="0.0" ixz="0.0"
+        iyy="0.1" iyz="0.0"
+        izz="0.1" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://enph353_npcs/agents/pedestrian/meshes/walking.dae" scale="0.05 0.05 0.05"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.03" />
+      <geometry>
+        <box size="0.04 0.04 0.06"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <gazebo>
+    <plugin name="object_controller" filename="libgazebo_ros_planar_move.so">
+      <commandTopic>cmd_vel</commandTopic>
+      <odometryTopic>odom</odometryTopic>
+      <odometryFrame>odom</odometryFrame>
+      <odometryRate>20.0</odometryRate>
+      <robotBaseFrame>base_link</robotBaseFrame>
+    </plugin>
+  </gazebo>
+
+</robot>

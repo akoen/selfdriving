@@ -1,0 +1,12 @@
+material sign_left_turn{
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture sign_left_turn.png
+            }
+        }   
+    }
+}

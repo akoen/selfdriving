@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="620mm"
+   height="620mm"
+   viewBox="0 0 620.00003 619.99999"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
+   sodipodi:docname="single_lane_xwalk.svg"
+   inkscape:export-filename="/home/miti/Documents/ENPH_353/2019_2S/town_map/Autonomous_driving_tiles_short_track_simple.png"
+   inkscape:export-xdpi="9.5986404"
+   inkscape:export-ydpi="9.5986404">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.24748738"
+     inkscape:cx="-761.88164"
+     inkscape:cy="1235.9031"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     showborder="false"
+     inkscape:window-width="2459"
+     inkscape:window-height="1411"
+     inkscape:window-x="101"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:snap-global="false" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(2055.4949,-1506.8226)">
+    <path
+       style="display:inline;fill:#1a803e;fill-opacity:1;stroke:none;stroke-width:5.04065037;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m -1435.4949,1506.8226 v 620 h -620 v -620 z"
+       id="path1533"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:260;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m -1745.4949,1506.8226 v 490 h -9.0714 v 0"
+       id="path1560"
+       inkscape:connector-curvature="0" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path814"
+       d="m -1745.4949,1506.8226 v 510 h -9.0714 v 0"
+       style="fill:#ffffff;fill-opacity:1;stroke:#4d4d4d;stroke-width:220;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <rect
+       y="1815.4949"
+       x="1716.8226"
+       height="20"
+       width="200"
+       id="rect945"
+       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.0992074;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       transform="rotate(90)" />
+    <rect
+       transform="rotate(90)"
+       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.0992074;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect5656"
+       width="200"
+       height="20"
+       x="1716.8226"
+       y="1775.4949" />
+    <rect
+       transform="rotate(90)"
+       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.0992074;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect836"
+       width="200"
+       height="20"
+       x="1716.8226"
+       y="1735.4949" />
+    <rect
+       transform="rotate(90)"
+       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.0992074;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect848"
+       width="200"
+       height="20"
+       x="1716.8226"
+       y="1695.4949" />
+    <rect
+       y="1655.4949"
+       x="1716.8226"
+       height="20"
+       width="200"
+       id="rect850"
+       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.0992074;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       transform="rotate(90)" />
+    <rect
+       transform="scale(-1)"
+       y="-2006.8226"
+       x="1645.4949"
+       height="20"
+       width="200"
+       id="rect5518"
+       style="display:inline;fill:#f40000;fill-opacity:1;stroke:none;stroke-width:6.26164293;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <rect
+       style="display:inline;fill:#f40000;fill-opacity:1;stroke:none;stroke-width:6.26164293;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect821"
+       width="200"
+       height="20"
+       x="1645.4949"
+       y="-1646.8226"
+       transform="scale(-1)" />
+  </g>
+</svg>

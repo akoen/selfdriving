@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<sdf version="1.4">
+<model name="full_town">
+  <static>true</static>
+    <link name="link">
+      <collision name="collision">
+        <pose>0 0 0 0 0 -1.57</pose>
+        <geometry>
+          <mesh>
+            <uri>model://full_town/meshes/Terrain_2.dae</uri>
+            <scale>0.50 0.50 0.50</scale>
+            <normal>0 0 1</normal>
+          </mesh>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>100</mu>
+              <mu2>100</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name="visual">
+        <pose>0 0 0 0 0 -1.57</pose>
+        <cast_shadows>false</cast_shadows>
+        <geometry>
+          <mesh>
+            <uri>model://full_town/meshes/Terrain_2.dae</uri>
+            <scale>0.50 0.50 0.50</scale>
+            <normal>0 0 1</normal>
+          </mesh>
+        </geometry>
+        <material>
+          <script>
+            <uri>file://materials/scripts</uri>
+            <uri>file://materials/textures</uri>
+            <name>full_town</name>
+          </script>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

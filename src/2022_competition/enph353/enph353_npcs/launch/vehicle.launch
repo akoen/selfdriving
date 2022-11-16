@@ -1,0 +1,21 @@
+<launch>
+  <arg name="robot_name"/>
+  <arg name="init_pose"/>
+  <arg name="mesh_file"/>
+  <arg name="waypoints_file"/>
+  <arg name="model" default="$(find enph353_npcs)/agents/vehicle/urdf/vehicle.xacro mesh_file:=$(arg mesh_file)"/>
+
+  <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
+
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
+        args="$(arg init_pose) -unpause -urdf -model $(arg robot_name) -param robot_description" respawn="false" output="screen" />
+
+  <node pkg="robot_state_publisher" type="robot_state_publisher"  name="robot_state_publisher">
+    <param name="publish_frequency" type="double" value="30" />
+  </node>
+
+  <node pkg="enph353_npcs" type="vehicle_controller.py" name="vehicle_controller" output="screen">
+  	<param name="name" value="$(arg robot_name)"/>
+    <param name="waypoints_file" value="$(arg waypoints_file)"/>
+  </node>
+</launch>

@@ -1,0 +1,12 @@
+material full_town{
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture single_lane_8parking_offroad_circle_45d.png
+            }
+        }   
+    }
+}

@@ -1,0 +1,12 @@
+material car3{
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture license_plates/plate_3.png
+            }
+        }   
+    }
+}

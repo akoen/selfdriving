@@ -1,0 +1,327 @@
+<?xml version="1.0"?>
+<sdf version="1.4">
+  <world name="default">
+    <include>
+      <uri>model://full_town</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <scene>
+    	<sky>
+    		<time>12</time>
+    	</sky>
+      <shadows>0</shadows>
+    </scene>
+    <include>
+    	<uri>model://wall</uri>
+    	<name>north_wall</name>
+    	<pose>1.55 0 0.25 0 0 1.57</pose>
+    	<static>true</static>
+    </include>
+    <include>
+    	<uri>model://wall</uri>
+    	<name>south_wall</name>
+    	<pose>-1.55 0 0.25 0 0 1.57</pose>
+    	<static>true</static>
+    </include>
+    <include>
+    	<uri>model://wall</uri>
+    	<name>east_wall</name>
+    	<pose>0 -1.55 0.25 0 0 0</pose>
+    	<static>true</static>
+    </include>
+    <include>
+    	<uri>model://wall</uri>
+    	<name>west_wall</name>
+    	<pose>0 1.55 0.25 0 0 0</pose>
+    	<static>true</static>
+    </include>
+
+    <!-- ROAD SIGNS START -->
+    <!--
+    <include>
+      <uri>model://sign_left_turn</uri>
+      <name>Sign_left0</name>
+      <static>true</static>
+      <pose>1.422 -0.246 0 0 0 3.141592</pose>
+    </include>
+    <include>
+      <uri>model://sign_left_turn</uri>
+      <name>Sign_left1</name>
+      <static>true</static>
+      <pose>-1.422 0.246 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://sign_left_turn</uri>
+      <name>Sign_left2</name>
+      <static>true</static>
+      <pose>-0.86 -0.2 0 0 0 1.57</pose>
+    </include>
+    <include>
+      <uri>model://sign_left_turn</uri>
+      <name>Sign_left3</name>
+      <static>true</static>
+      <pose>0.86 0.2 0 0 0 -1.57</pose>
+    </include>
+    <include>
+      <uri>model://sign_right_turn</uri>
+      <name>Sign_right0</name>
+      <static>true</static>
+      <pose>1.058 0.246 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://sign_right_turn</uri>
+      <name>Sign_right1</name>
+      <static>true</static>
+      <pose>-1.058 -0.246 0 0 0 3.141592</pose>
+    </include>
+    <include>
+      <uri>model://sign_left_right_turn</uri>
+      <name>Sign_left_right0</name>
+      <static>true</static>
+      <pose>0.18 1 0 0 0 3.141592</pose>
+    </include>
+    <include>
+      <uri>model://sign_left_right_turn</uri>
+      <name>Sign_left_right1</name>
+      <static>true</static>
+      <pose>-0.18 -1 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://sign_straight</uri>
+      <name>Sign_straight0</name>
+      <static>true</static>
+      <pose>-0.45 -0.25 0 0 0 3.141592</pose>
+    </include>
+    <include>
+      <uri>model://sign_straight</uri>
+      <name>Sign_straight1</name>
+      <static>true</static>
+      <pose>0.45 0.25 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://sign_straight_left_turn</uri>
+      <name>Sign_straight_left0</name>
+      <static>true</static>
+      <pose>0.332 -0.441 0 0 0 -0.7854</pose>
+    </include>
+    <include>
+      <uri>model://sign_straight_left_turn</uri>
+      <name>Sign_straight_left1</name>
+      <static>true</static>
+      <pose>-0.332 0.441 0 0 0 2.3562</pose>
+    </include>
+    -->
+    <!-- ROAD SIGNS END -->
+
+    <!-- PARKED CARS START -->
+    <include>
+      <uri>model://car0</uri>
+      <static>true</static>
+      <pose>-0.631 -1.041 0.04 0.0 0.0 1.57</pose>
+    </include>
+    <include>
+      <uri>model://car1</uri>
+      <static>true</static>
+      <pose>0.631 -1.467 0.04 0.0 0.0 1.57</pose>
+    </include>
+    <include>
+      <uri>model://car2</uri>
+      <static>true</static>
+      <pose>1.03 -0.623 0.04 0.0 0.0 3.14</pose>
+    </include>
+    <include>
+      <uri>model://car3</uri>
+      <static>true</static>
+      <pose>0.631 1.059 0.1 0.0 0.0 4.71</pose>
+    </include>
+    <include>
+      <uri>model://car4</uri>
+      <static>true</static>
+      <pose>-0.631 1.027 0.04 0.0 0.0 4.71</pose>
+    </include>
+    <include>
+      <uri>model://car5</uri>
+      <static>true</static>
+      <pose>-1.03 0.607 0.04 0.0 0.0 0.0</pose>
+    </include>
+    <include>
+      <uri>model://car6</uri>
+      <static>true</static>
+      <pose>0.0 0.4 0.04 0.0 0.0 1.57</pose>
+    </include>
+    <include>
+      <uri>model://car7</uri>
+      <static>true</static>
+      <pose>0.0 -0.4 0.04 0.0 0.0 -1.57</pose>
+    </include>
+    <include>
+      <uri>model://car_muscle</uri>
+      <static>true</static>
+      <pose>1.5 1 0.0 0.0 0.0 0.0</pose>
+    </include>
+    <!-- PARKED CARS END-->
+    
+    <!-- TREES START-->
+    <include>
+      <uri>model://tree_misc</uri>
+      <static>true</static>
+      <pose> 0 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_oak</uri>
+      <name>tree_oak_01</name>
+      <static>true</static>
+      <pose> 0.94 0.31 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_oak</uri>
+      <name>tree_oak_02</name>
+      <static>true</static>
+      <pose> -0.94 -0.31 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_oak</uri>
+      <name>tree_oak_03</name>
+      <static>true</static>
+      <pose> -0.94 0.31 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_oak</uri>
+      <name>tree_oak_04</name>
+      <static>true</static>
+      <pose> 0.94 -0.31 0 0 0 0</pose>
+    </include>
+       <include>
+      <uri>model://tree_oak</uri>
+      <name>tree_oak_05</name>
+      <static>true</static>
+      <pose> -0.26 0.92 0 0 0 0</pose>
+    </include>
+   <include>
+      <uri>model://tree_oak</uri>
+      <name>tree_oak_06</name>
+      <static>true</static>
+      <pose> -0.26 -0.92 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_oak</uri>
+      <name>tree_oak_07</name>
+      <static>true</static>
+      <pose> 0.26 -0.92 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_oak</uri>
+      <name>tree_oak_08</name>
+      <static>true</static>
+      <pose> 0.26 0.92 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_oak</uri>
+      <name>tree_oak_09</name>
+      <static>true</static>
+      <pose> 0.92 0.92 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_oak</uri>
+      <name>tree_oak_10</name>
+      <static>true</static>
+      <pose> -0.92 0.92 0 0 0 0</pose>
+    </include>
+        <include>
+      <uri>model://tree_oak</uri>
+      <name>tree_oak_11</name>
+      <static>true</static>
+      <pose> 0.92 -0.92 0 0 0 0</pose>
+    </include>
+        <include>
+      <uri>model://tree_oak</uri>
+      <name>tree_oak_12</name>
+      <static>true</static>
+      <pose> -0.92 -0.92 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_fir</uri>
+      <name>fir_tree_01</name>
+      <static>true</static>
+      <pose> 1.55 1.55 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_fir</uri>
+      <name>fir_tree_02</name>
+      <static>true</static>
+      <pose> 1.55 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_fir</uri>
+      <name>fir_tree_03</name>
+      <static>true</static>
+      <pose> 1.55 -1.55 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_fir</uri>
+      <name>fir_tree_04</name>
+      <static>true</static>
+      <pose> 0 -1.55 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_fir</uri>
+      <name>fir_tree_05</name>
+      <static>true</static>
+      <pose> -1.55 -1.55 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_fir</uri>
+      <name>fir_tree_06</name>
+      <static>true</static>
+      <pose> -1.55 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_fir</uri>
+      <name>fir_tree_07</name>
+      <static>true</static>
+      <pose> -1.55 1.55 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://tree_fir</uri>
+      <name>fir_tree_08</name>
+      <static>true</static>
+      <pose> 0 1.55 0 0 0 0</pose>
+    </include>
+    <!-- TREES END -->
+    <gui>
+      <camera name="user_camera">
+        <pose>0.0 0.0 5.0 0.0 1.57 0.0</pose>
+      </camera>
+    </gui>
+    <!-- 
+    Change simulation speed
+      real_time_factor
+        attempted RTF simulation tries to run at (not guarateed) 
+      real_time_update_rate (default 1000)
+        increase if computer can run faster
+      max_step_size (default 0.001)
+        increasing it increases RTF but simulation accuracy is
+        degraded
+    -->
+    <!-- Increase simulation speed. Keep max_step_size=0.001 to maintain same quality -->
+    <physics type='ode'>
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>10.0</real_time_factor>
+      <real_time_update_rate>1000.0</real_time_update_rate>
+    </physics> 
+
+    <!-- Add collision plugin for robots -->
+    <plugin name="B1_collision_plugin" filename="libcollision_plugin.so">
+      <pubPeriod>2</pubPeriod>
+      <pubTopic>B1_Hit</pubTopic>
+      <collisionObject1>B1</collisionObject1>
+    </plugin>
+    <plugin name="R1_collision_plugin" filename="libcollision_plugin.so">
+      <pubPeriod>2</pubPeriod>
+      <pubTopic>R1_Hit</pubTopic>
+      <collisionObject1>R1</collisionObject1>
+    </plugin>
+  </world>
+</sdf>

@@ -1,0 +1,13 @@
+material wall{
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture forest.png
+                scale 0.5 1
+            }
+        }   
+    }
+}

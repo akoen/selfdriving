@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<sdf version="1.4">
+<model name="short_town">
+  <static>true</static>
+    <link name="link">
+      <collision name="collision">
+        <geometry>
+          <plane>
+            <normal>0 0 1</normal>
+          </plane>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>100</mu>
+              <mu2>50</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name="visual">
+        <cast_shadows>false</cast_shadows>
+        <pose>0 1.22 0 </pose>
+        <geometry>/usr/local/share/gazebo/models
+          <plane>
+            <normal>0 0 1</normal>
+            <size>1.24 2.48</size>
+          </plane>
+        </geometry>
+        <material>
+          <script>
+            <uri>file://materials/scripts</uri>
+            <uri>file://materials/textures</uri>
+            <name>short_town</name>
+          </script>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

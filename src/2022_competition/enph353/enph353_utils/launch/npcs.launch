@@ -1,0 +1,40 @@
+<launch>
+	<arg name="spawn_pedestrians"/>
+	<arg name="spawn_vehicles"/>
+	<group if="$(arg spawn_pedestrians)">
+		<group ns="P1">
+			<param name="tf_prefix" value="P1_tf" />
+			<include file="$(find enph353_npcs)/launch/pedestrian.launch">
+				<arg name="init_pose" value="-x -1 -y -0.63 -z 0.03 -R 0.0 -P 0.0 -Y 1.57" />
+				<arg name="robot_name"  value="P1" />
+				<arg name="pose_a_x" value="-1"/>
+				<arg name="pose_a_y" value="-0.63"/>
+				<arg name="pose_b_x" value="-1.44"/>
+				<arg name="pose_b_y" value="-0.63"/>
+			</include>
+		</group>
+
+		<group ns="P2">
+			<param name="tf_prefix" value="P2_tf" />
+			<include file="$(find enph353_npcs)/launch/pedestrian.launch">
+				<arg name="init_pose" value="-x 1 -y 0.63 -z 0.03 -R 0.0 -P 0.0 -Y 0.0" />
+				<arg name="robot_name"  value="P2" />
+				<arg name="pose_a_x" value="1"/>
+				<arg name="pose_a_y" value="0.63"/>
+				<arg name="pose_b_x" value="1.44"/>
+				<arg name="pose_b_y" value="0.63"/>
+			</include>
+		</group>
+	</group>
+	<group if="$(arg spawn_vehicles)">
+		<group ns="V1">
+			<param name="tf_prefix" value="V1_tf" />
+			<include file="$(find enph353_npcs)/launch/vehicle.launch">
+				<arg name="init_pose" value="-x 0.635 -y 0.3 -z 0.03 -R 0.0 -P 0.0 -Y 0.0" />
+				<arg name="robot_name"  value="V1" />
+				<arg name="waypoints_file" value="$(find enph353_npcs)/config/poses.csv"/>
+				<arg name="mesh_file" value="package://enph353_npcs/agents/vehicle/meshes/pickup.dae"/>
+			</include>
+		</group>
+	</group>
+</launch>

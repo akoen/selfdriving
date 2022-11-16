@@ -1,0 +1,12 @@
+material bluetest{
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture bluetapetrack.png
+            }
+        }   
+    }
+}

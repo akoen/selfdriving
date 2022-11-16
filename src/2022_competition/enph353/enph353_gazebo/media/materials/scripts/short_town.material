@@ -1,0 +1,12 @@
+material short_town{
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture single_lane_short.png
+            }
+        }   
+    }
+}
