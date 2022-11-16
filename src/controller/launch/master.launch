@@ -1,0 +1,12 @@
+<launch>
+  <include file="$(find enph353_utils)/launch/sim.launch">
+    <arg name="spawn_pedestrians" value="true"/>
+    <arg name="spawn_vehicles" value="false"/>
+  </include>
+  <node pkg="controller"
+        type="run.py"
+        name="run"
+        output="screen"
+        >
+  </node>
+</launch>
