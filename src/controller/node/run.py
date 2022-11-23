@@ -62,21 +62,21 @@ class line_following:
     # Show camera view
     frame_out = frame
     # frame_out = cv2.circle(frame_out, (int(x), 700), 4, (0, 0, 255), -1)
-    cv2.imshow("Image window", frame_bin_thresh)
+    cv2.imshow("Image window", frame)
     cv2.waitKey(3)
 
-    move = Twist()
-    move.linear.x = 0.1
-    if not np.isnan(x):
-      self.error = (x-400)/800
+    # move = Twist()
+    # move.linear.x = 0.1
+    # if not np.isnan(x):
+    #   self.error = (x-400)/800
 
-    PID_value = self.controller.send(self.error) 
-    move.angular.z = -PID_value
-    print(self.error, PID_value)
-    try:
-        self.pub.publish(move) 
-    except CvBridgeError as e:
-        print(e)
+    # PID_value = self.controller.send(self.error) 
+    # move.angular.z = -PID_value
+    # print(self.error, PID_value)
+    # try:
+    #     self.pub.publish(move) 
+    # except CvBridgeError as e:
+    #     print(e)
 
 
 def main(args):

@@ -72,3 +72,4 @@ with open(path + "plates.csv", 'w') as plates_file:
                                  "plate_" + str(i) + ".png"), labelled)
         cv2.imwrite(os.path.join(path+texture_path+"unlabelled/",
                                  "plate_" + str(i) + ".png"), unlabelled)
+    
