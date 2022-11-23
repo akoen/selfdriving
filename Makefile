@@ -9,3 +9,6 @@ all: files
 
 kill: files
 	-killall rosout roslaunch rosmaster gzserver nodelet robot_state_publisher gzclient python3
+
+reset: files
+	-rosservice call /gazebo/reset_simulation "{}"

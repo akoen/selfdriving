@@ -72,7 +72,8 @@ class line_following:
     move.angular.z = -PID_value
     print(steer_angle, PID_value)
     try:
-        self.pub.publish(move) 
+        # self.pub.publish(move) 
+        return
     except CvBridgeError as e:
         print(e)
 

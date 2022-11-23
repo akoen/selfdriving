@@ -43,77 +43,38 @@ class HandCodedLaneFollower(object):
 # Frame processing steps
 ############################
 def detect_lane(frame):
-    logging.debug('detecting lane lines...')
 
-    edges = detect_edges(frame)
-
-    cropped_edges = region_of_interest(edges)
-
-    line_segments = detect_line_segments(cropped_edges)
-    line_segment_image = display_lines(frame, line_segments)
-
-    lane_lines = average_slope_intercept(frame, line_segments)
-    lane_lines_image = display_lines(frame, lane_lines)
-
-    return lane_lines, lane_lines_image
-
-
-def detect_edges(frame):
-    # filter for blue lane lines
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    lower_blue = np.array([0, 0, 254])
-    upper_blue = np.array([255, 255, 255])
+    lower_blue = np.array([0, 0, 100])
+    upper_blue = np.array([255, 0, 255])
 
     mask = cv2.inRange(hsv, lower_blue, upper_blue)
 
     # detect edges
     edges = cv2.Canny(mask, 200, 400)
 
-    return edges
+    # cv2.imshow("Mask", mask)
+    # cv2.imshow("Canny", edges)
 
-def region_of_interest(canny):
-    height, width = canny.shape
-    mask = np.zeros_like(canny)
+    cropped_edges = edges
 
-    # only focus bottom half of the screen
-
-    polygon = np.array([[
-        (0, height * 1 / 2),
-        (width, height * 1 / 2),
-        (width, height),
-        (0, height),
-    ]], np.int32)
-
-    cv2.fillPoly(mask, polygon, 255)
-    show_image("mask", mask)
-    masked_image = cv2.bitwise_and(canny, mask)
-
-    return masked_image
-
-
-def detect_line_segments(cropped_edges):
     # tuning min_threshold, minLineLength, maxLineGap is a trial and error process by hand
     rho = 1  # precision in pixel, i.e. 1 pixel
     angle = np.pi / 180  # degree in radian, i.e. 1 degree
     min_threshold = 10  # minimal of votes
-    line_segments = cv2.HoughLinesP(cropped_edges, rho, angle, min_threshold, np.array([]), minLineLength=8,
-                                    maxLineGap=4)
+    line_segments = cv2.HoughLinesP(cropped_edges, rho, angle, min_threshold, np.array([]), minLineLength=400, maxLineGap=100)
+    # lines = [np.array([[x1, y1], [x2, y2]]) for [[x1,y1,x2,y2]] in line_segments]
+    # cv2.imshow("Lines", cv2.polylines(cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR), lines, False, (255,100,0), 2))
 
-    if line_segments is not None:
-        for line_segment in line_segments:
-            logging.debug('detected line_segment:')
-            logging.debug("%s of length %s" % (line_segment, length_of_line_segment(line_segment[0])))
+    lsd = cv2.createLineSegmentDetector()
+    lines = lsd.detect(cropped_edges)[0]
 
-    return line_segments
+    cv2.imshow("LSD", lsd.drawSegments(cropped_edges, lines))
 
 
-def average_slope_intercept(frame, line_segments):
-    """
-    This function combines line segments into one or two lane lines
-    If all line slopes are < 0: then we only have detected left lane
-    If all line slopes are > 0: then we only have detected right lane
-    """
+
+
     lane_lines = []
     if line_segments is None:
         logging.info('No line_segment segments detected')
@@ -152,8 +113,17 @@ def average_slope_intercept(frame, line_segments):
 
     logging.debug('lane lines: %s' % lane_lines)  # [[[316, 720, 484, 432]], [[1009, 720, 718, 432]]]
 
-    return lane_lines
+    # Display Lines
+    line_color=(255, 255, 255)
+    line_width=4
+    line_image = np.zeros_like(frame)
+    if lane_lines is not None:
+        for line in lane_lines:
+            for x1, y1, x2, y2 in line:
+                cv2.line(line_image, (x1, y1), (x2, y2), line_color, line_width)
+    line_image = cv2.addWeighted(frame, 0.8, line_image, 1, 1)
 
+    return lane_lines, line_image
 
 def compute_steering_angle(frame, lane_lines):
     """ Find the steering angle based on lane line coordinate
@@ -187,15 +157,6 @@ def compute_steering_angle(frame, lane_lines):
 ############################
 # Utility Functions
 ############################
-def display_lines(frame, lines, line_color=(0, 255, 0), line_width=10):
-    line_image = np.zeros_like(frame)
-    if lines is not None:
-        for line in lines:
-            for x1, y1, x2, y2 in line:
-                cv2.line(line_image, (x1, y1), (x2, y2), line_color, line_width)
-    line_image = cv2.addWeighted(frame, 0.8, line_image, 1, 1)
-    return line_image
-
 
 def display_heading_line(frame, steering_angle, line_color=(0, 0, 255), line_width=5, ):
     heading_image = np.zeros_like(frame)
@@ -241,47 +202,3 @@ def make_points(frame, line):
     x1 = max(-width, min(2 * width, int((y1 - intercept) / slope)))
     x2 = max(-width, min(2 * width, int((y2 - intercept) / slope)))
     return [[x1, y1, x2, y2]]
-
-
-############################
-# Test Functions
-############################
-def test_photo(file):
-    land_follower = HandCodedLaneFollower()
-    frame = cv2.imread(file)
-    combo_image = land_follower.follow_lane(frame)
-    show_image('final', combo_image, True)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
-def test_video(video_file):
-    lane_follower = HandCodedLaneFollower()
-    cap = cv2.VideoCapture(video_file + '.avi')
-
-    # skip first second of video.
-    for i in range(3):
-        _, frame = cap.read()
-
-    video_type = cv2.VideoWriter_fourcc(*'XVID')
-    video_overlay = cv2.VideoWriter("%s_overlay.avi" % (video_file), video_type, 20.0, (320, 240))
-    try:
-        i = 0
-        while cap.isOpened():
-            _, frame = cap.read()
-            print('frame %s' % i )
-            combo_image= lane_follower.follow_lane(frame)
-            
-            cv2.imwrite("%s_%03d_%03d.png" % (video_file, i, lane_follower.curr_steering_angle), frame)
-            
-            cv2.imwrite("%s_overlay_%03d.png" % (video_file, i), combo_image)
-            video_overlay.write(combo_image)
-            cv2.imshow("Road with Lane line", combo_image)
-
-            i += 1
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-    finally:
-        cap.release()
-        video_overlay.release()
-        cv2.destroyAllWindows()
