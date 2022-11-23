@@ -44,6 +44,9 @@ class HandCodedLaneFollower(object):
 ############################
 def detect_lane(frame):
 
+    # frame = cv2.GaussianBlur(frame, (11,11), cv2.BORDER_DEFAULT)
+    frame_out = frame
+
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     lower_blue = np.array([0, 0, 100])
@@ -59,21 +62,23 @@ def detect_lane(frame):
 
     cropped_edges = edges
 
+    # edges = cv2.GaussianBlur(edges, (15,15), cv2.BORDER_DEFAULT)
+    edges = cv2.dilate(edges, np.ones((5,5)), iterations=1)
+
     # tuning min_threshold, minLineLength, maxLineGap is a trial and error process by hand
     rho = 1  # precision in pixel, i.e. 1 pixel
     angle = np.pi / 180  # degree in radian, i.e. 1 degree
-    min_threshold = 10  # minimal of votes
-    line_segments = cv2.HoughLinesP(cropped_edges, rho, angle, min_threshold, np.array([]), minLineLength=400, maxLineGap=100)
-    # lines = [np.array([[x1, y1], [x2, y2]]) for [[x1,y1,x2,y2]] in line_segments]
-    # cv2.imshow("Lines", cv2.polylines(cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR), lines, False, (255,100,0), 2))
+    min_threshold = 40  # minimal of votes
+    line_segments = cv2.HoughLinesP(cropped_edges, rho, angle, min_threshold, np.array([]), minLineLength=100, maxLineGap=20)
+    # lsd = cv2.createLineSegmentDetector(cv2.LSD_REFINE_NONE, 0.2)
+    # line_segments = lsd.detect(mask)[0]
 
-    lsd = cv2.createLineSegmentDetector()
-    lines = lsd.detect(cropped_edges)[0]
+    lines = np.array([[[x1, y1], [x2, y2]] for [[x1,y1,x2,y2]] in line_segments]).astype(int)
+    # lines = lines[np.array([np.linalg.norm(e[1]-e[0]) for e in lines]) > 20]
 
-    cv2.imshow("LSD", lsd.drawSegments(cropped_edges, lines))
-
-
-
+    frame_out = cv2.addWeighted(frame_out, 0.5, cv2.polylines(np.zeros_like(frame), lines, False, (255,255,255), 2), 0.6, 1)
+    # cv2.imshow("Lines", cv2.polylines(np.zeros(edges.shape), lines, False, (255,100,0), 2))
+    # cv2.imshow("Mask", edges)
 
     lane_lines = []
     if line_segments is None:
@@ -82,7 +87,9 @@ def detect_lane(frame):
 
     height, width, _ = frame.shape
     left_fit = []
+    left_weights = []
     right_fit = []
+    right_weights = []
 
     boundary = 1/3
     left_region_boundary = width * (1 - boundary)  # left lane line segment should be on left 2/3 of the screen
@@ -96,39 +103,38 @@ def detect_lane(frame):
             fit = np.polyfit((x1, x2), (y1, y2), 1)
             slope = fit[0]
             intercept = fit[1]
-            if slope < 0:
-                if x1 < left_region_boundary and x2 < left_region_boundary:
-                    left_fit.append((slope, intercept))
-            else:
-                if x1 > right_region_boundary and x2 > right_region_boundary:
-                    right_fit.append((slope, intercept))
+            if np.abs(slope) > 0.15:
+                if slope < 0:
+                    if x1 < left_region_boundary and x2 < left_region_boundary:
+                        left_fit.append((slope, intercept))
+                        left_weights.append(np.sqrt((x2-x1)**2+(y2-y1)**2))
+                else:
+                    if x1 > right_region_boundary and x2 > right_region_boundary:
+                        right_fit.append((slope, intercept))
+                        right_weights.append(np.sqrt((x2-x1)**2+(y2-y1)**2))
 
-    left_fit_average = np.average(left_fit, axis=0)
     if len(left_fit) > 0:
+        left_fit_average = np.average(left_fit, axis=0, weights=left_weights)
         lane_lines.append(make_points(frame, left_fit_average))
 
-    right_fit_average = np.average(right_fit, axis=0)
     if len(right_fit) > 0:
+        right_fit_average = np.average(right_fit, axis=0, weights=right_weights)
         lane_lines.append(make_points(frame, right_fit_average))
 
     logging.debug('lane lines: %s' % lane_lines)  # [[[316, 720, 484, 432]], [[1009, 720, 718, 432]]]
 
     # Display Lines
-    line_color=(255, 255, 255)
     line_width=4
     line_image = np.zeros_like(frame)
     if lane_lines is not None:
         for line in lane_lines:
             for x1, y1, x2, y2 in line:
-                cv2.line(line_image, (x1, y1), (x2, y2), line_color, line_width)
-    line_image = cv2.addWeighted(frame, 0.8, line_image, 1, 1)
+                cv2.line(line_image, (x1, y1), (x2, y2), (255,100,0), line_width)
+    frame_out = cv2.addWeighted(frame_out, 1, line_image, 1, 1)
 
-    return lane_lines, line_image
+    heading_image = np.zeros_like(frame)
+    height, width, _ = frame.shape
 
-def compute_steering_angle(frame, lane_lines):
-    """ Find the steering angle based on lane line coordinate
-        We assume that camera is calibrated to point to dead center
-    """
     if len(lane_lines) == 0:
         logging.info('No lane lines detected, do nothing')
         return -90
@@ -137,7 +143,8 @@ def compute_steering_angle(frame, lane_lines):
     if len(lane_lines) == 1:
         logging.debug('Only detected one lane line, just follow it. %s' % lane_lines[0])
         x1, _, x2, _ = lane_lines[0][0]
-        x_offset = x2 - x1
+        # x_offset = x2 - x1
+        x_offset = 0
     else:
         _, _, left_x2, _ = lane_lines[0][0]
         _, _, right_x2, _ = lane_lines[1][0]
@@ -149,18 +156,6 @@ def compute_steering_angle(frame, lane_lines):
     y_offset = int(height / 2)
 
     steering_angle = math.atan(x_offset / y_offset)  # angle (in radian) to center vertical line
-
-    logging.debug('new steering angle: %s' % steering_angle)
-    return steering_angle
-
-
-############################
-# Utility Functions
-############################
-
-def display_heading_line(frame, steering_angle, line_color=(0, 0, 255), line_width=5, ):
-    heading_image = np.zeros_like(frame)
-    height, width, _ = frame.shape
 
     # figure out the heading line from steering angle
     # heading line (x1,y1) is always center bottom of the screen
@@ -176,20 +171,21 @@ def display_heading_line(frame, steering_angle, line_color=(0, 0, 255), line_wid
     x2 = int(x1 + height / 2 * math.tan(steering_angle_radian ))
     y2 = int(height / 2)
 
-    cv2.line(heading_image, (x1, y1), (x2, y2), line_color, line_width)
-    heading_image = cv2.addWeighted(frame, 0.8, heading_image, 1, 1)
+    cv2.line(heading_image, (x1, y1), (x2, y2), (255,0,100), line_width)
+    frame_out = cv2.addWeighted(frame_out, 1, heading_image, 1, 1)
 
-    return heading_image
+    return steering_angle, lane_lines, frame_out
+
+############################
+# Utility Functions
+############################
+
 
 
 def length_of_line_segment(line):
     x1, y1, x2, y2 = line
     return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
-
-def show_image(title, frame, show=_SHOW_IMAGE):
-    if show:
-        cv2.imshow(title, frame)
 
 
 def make_points(frame, line):

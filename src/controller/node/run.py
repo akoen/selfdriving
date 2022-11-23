@@ -36,9 +36,9 @@ class line_following:
 
     self.lane_follower = lane_follow.HandCodedLaneFollower()
 
-    self.controller = PID(0.07, 0.05, 0)
+    self.controller = PID(0.7, 0.5, 0.5)
     self.controller.send(None) # Initialize
-    self.error = -0.2
+    self.error = -0
 
   def callback(self,data):
     try:
@@ -54,12 +54,9 @@ class line_following:
     
     # lane_lines, frame = self.lane_follower.detectL(frame)
 
-    lane_lines, frame = lane_follow.detect_lane(frame)
-    steer_angle = lane_follow.compute_steering_angle(frame, lane_lines)
-    frame = lane_follow.display_heading_line(frame, steer_angle)
+    steer_angle, lane_lines, frame_out = lane_follow.detect_lane(frame)
 
     # Show camera view
-    frame_out = frame
     # frame_out = cv2.circle(frame_out, (int(x), 700), 4, (0, 0, 255), -1)
     cv2.imshow("Image window", frame_out)
     cv2.waitKey(3)
@@ -72,8 +69,7 @@ class line_following:
     move.angular.z = -PID_value
     print(steer_angle, PID_value)
     try:
-        # self.pub.publish(move) 
-        return
+        self.pub.publish(move) 
     except CvBridgeError as e:
         print(e)
 
@@ -83,6 +79,7 @@ def main(args):
   rospy.init_node('image_converter', anonymous=True)
   try:
     rospy.spin()
+    return
   except KeyboardInterrupt:
     print("Shutting down")
   cv2.destroyAllWindows()
