@@ -9,4 +9,16 @@
         output="screen"
         >
   </node>
+  <!-- <node pkg="enph353_utils"
+        type="score_tracker.py"
+        name="tracker"
+        output="screen"
+        >
+  </node>
+  <node pkg="controller"
+        type="publish_plates.py"
+        name="pubplates"
+        output="screen"
+        >
+  </node> -->
 </launch>
