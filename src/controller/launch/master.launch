@@ -3,12 +3,12 @@
     <arg name="spawn_pedestrians" value="true"/>
     <arg name="spawn_vehicles" value="false"/>
   </include>
-  <node pkg="controller"
+  <!-- <node pkg="controller"
         type="run.py"
         name="run"
         output="screen"
         >
-  </node>
+  </node> -->
   <!-- <node pkg="enph353_utils"
         type="score_tracker.py"
         name="tracker"
