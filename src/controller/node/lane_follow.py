@@ -69,14 +69,13 @@ def detect_lane(frame):
     rho = 1  # precision in pixel, i.e. 1 pixel
     angle = np.pi / 180  # degree in radian, i.e. 1 degree
     min_threshold = 40  # minimal of votes
-    line_segments = cv2.HoughLinesP(cropped_edges, rho, angle, min_threshold, np.array([]), minLineLength=100, maxLineGap=20)
+    line_segments = cv2.HoughLinesP(cropped_edges, rho, angle, min_threshold, np.array([]), minLineLength=1, maxLineGap=20)
     # lsd = cv2.createLineSegmentDetector(cv2.LSD_REFINE_NONE, 0.2)
     # line_segments = lsd.detect(mask)[0]
 
-    lines = np.array([[[x1, y1], [x2, y2]] for [[x1,y1,x2,y2]] in line_segments]).astype(int)
+    # lines = np.array([[[x1, y1], [x2, y2]] for [[x1,y1,x2,y2]] in line_segments]).astype(int)
     # lines = lines[np.array([np.linalg.norm(e[1]-e[0]) for e in lines]) > 20]
 
-    frame_out = cv2.addWeighted(frame_out, 0.5, cv2.polylines(np.zeros_like(frame), lines, False, (255,255,255), 2), 0.6, 1)
     # cv2.imshow("Lines", cv2.polylines(np.zeros(edges.shape), lines, False, (255,100,0), 2))
     # cv2.imshow("Mask", edges)
 
@@ -90,10 +89,15 @@ def detect_lane(frame):
     left_weights = []
     right_fit = []
     right_weights = []
+    lines = []
+    reject_lines = []
 
     boundary = 1/3
     left_region_boundary = width * (1 - boundary)  # left lane line segment should be on left 2/3 of the screen
     right_region_boundary = width * boundary # right lane line segment should be on left 2/3 of the screen
+
+    Y_MIN = 600
+    X_MIN = 400
 
     for line_segment in line_segments:
         for x1, y1, x2, y2 in line_segment:
@@ -103,7 +107,8 @@ def detect_lane(frame):
             fit = np.polyfit((x1, x2), (y1, y2), 1)
             slope = fit[0]
             intercept = fit[1]
-            if np.abs(slope) > 0.15:
+            if np.abs(slope) > 0.08 and (max(y1,y2)>Y_MIN or (min(x1,x2) > X_MIN)):
+                print(max(y1,y2), min(x1,x2), width-max(x1,x2))
                 if slope < 0:
                     if x1 < left_region_boundary and x2 < left_region_boundary:
                         left_fit.append((slope, intercept))
@@ -112,6 +117,16 @@ def detect_lane(frame):
                     if x1 > right_region_boundary and x2 > right_region_boundary:
                         right_fit.append((slope, intercept))
                         right_weights.append(np.sqrt((x2-x1)**2+(y2-y1)**2))
+                
+                lines.append(np.array([[x1, y1], [x2, y2]], dtype=int))
+            else:
+                reject_lines.append(np.array([[x1, y1], [x2, y2]], dtype=int))
+
+
+
+    # print(lines)
+    frame_out = cv2.addWeighted(frame_out, 0.6, cv2.polylines(np.zeros_like(frame), lines, False, (255,255,255), 2), 0.6, 1)
+    frame_out = cv2.addWeighted(frame_out, 1, cv2.polylines(np.zeros_like(frame), reject_lines, False, (0,0,255), 2), 0.3, 1)
 
     if len(left_fit) > 0:
         left_fit_average = np.average(left_fit, axis=0, weights=left_weights)
@@ -141,16 +156,20 @@ def detect_lane(frame):
 
     height, width, _ = frame.shape
     if len(lane_lines) == 1:
+        # return None, None, lane_lines, frame_out
         logging.debug('Only detected one lane line, just follow it. %s' % lane_lines[0])
         x1, _, x2, _ = lane_lines[0][0]
-        # x_offset = x2 - x1
-        x_offset = 0
+        x_offset = (x2 - x1) / 8
+        # x_offset = 0
+        mid=width/2
+        offset_1 = 0
     else:
-        _, _, left_x2, _ = lane_lines[0][0]
-        _, _, right_x2, _ = lane_lines[1][0]
+        left_x1, _, left_x2, _ = lane_lines[0][0]
+        right_x1, _, right_x2, _ = lane_lines[1][0]
         camera_mid_offset_percent = 0.00 # 0.0 means car pointing to center, -0.03: car is centered to left, +0.03 means car pointing to right
         mid = int(width / 2 * (1 + camera_mid_offset_percent))
         x_offset = (left_x2 + right_x2) / 2 - mid
+        offset_1 = (left_x1 + right_x1) / 2 - mid
 
     # find the steering angle, which is angle between navigation direction to end of center line
     y_offset = int(height / 2)
@@ -171,10 +190,10 @@ def detect_lane(frame):
     x2 = int(x1 + height / 2 * math.tan(steering_angle_radian ))
     y2 = int(height / 2)
 
-    cv2.line(heading_image, (x1, y1), (x2, y2), (255,0,100), line_width)
+    cv2.line(heading_image, (int(offset_1+mid), y1), (x2, y2), (255,0,100), line_width)
     frame_out = cv2.addWeighted(frame_out, 1, heading_image, 1, 1)
 
-    return steering_angle, lane_lines, frame_out
+    return steering_angle, offset_1/(width/2), lane_lines, frame_out
 
 ############################
 # Utility Functions

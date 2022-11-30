@@ -36,9 +36,12 @@ class line_following:
 
     self.lane_follower = lane_follow.HandCodedLaneFollower()
 
-    self.controller = PID(0.7, 0.5, 0.5)
-    self.controller.send(None) # Initialize
-    self.error = -0
+    self.angle_control = PID(0.8, 0.5, 0.8)
+    self.angle_control.send(None) # Initialize
+    # self.offset_control = PID(0.7, 0, 0)
+    self.offset_control = PID(0.7, 0.5, 0)
+    self.offset_control.send(None) # Initialize
+    self.PID_value = -0
 
   def callback(self,data):
     try:
@@ -54,7 +57,7 @@ class line_following:
     
     # lane_lines, frame = self.lane_follower.detectL(frame)
 
-    steer_angle, lane_lines, frame_out = lane_follow.detect_lane(frame)
+    steer_angle, offset, lane_lines, frame_out = lane_follow.detect_lane(frame)
 
     # Show camera view
     # frame_out = cv2.circle(frame_out, (int(x), 700), 4, (0, 0, 255), -1)
@@ -65,9 +68,11 @@ class line_following:
     move = Twist()
     move.linear.x = 0.1
 
-    PID_value = self.controller.send(steer_angle) 
-    move.angular.z = -PID_value
-    print(steer_angle, PID_value)
+    if steer_angle is not None:
+      self.PID_value = self.angle_control.send(steer_angle) + self.offset_control.send(offset)
+      print(f"{steer_angle:.2f}, {offset:.2f}, {self.PID_value:.2f}")
+
+    move.angular.z = -self.PID_value
     try:
         self.pub.publish(move) 
     except CvBridgeError as e:
