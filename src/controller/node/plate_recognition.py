@@ -18,15 +18,15 @@ class plate_recognizer():
     def __init__(self):
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("/R1/pi_camera/image_raw",Image,self.callback)
-    
+    dd
     def callback(self,data):
         
         uh = 176 # Upper Hue
         us = 11 # Upper Sat
-        uv = 98 # Upper Value
-        lh = 115 # Lower Hue
-        ls = 0 # Lower Sat
-        lv = 89 # Lower Value
+        uv = 190 # Upper Value
+        lh = 105 # Lower Hue
+        ls = 5 # Lower Sat
+        lv = 90 # Lower Value
         mb = 13 # Median Blur
 
         lower_hsv = np.array([lh,ls,lv])
@@ -38,7 +38,9 @@ class plate_recognizer():
         except CvBridgeError as e:
             print(e)
 
-        img_blur = cv.medianBlur(img,mb)
+        height, width, _ = img.shape
+        img_cropped = img[int(height/2): height, :] # y:y+h,x:x+w
+        img_blur = cv.medianBlur(img_cropped,mb)
         hsv = cv.cvtColor(img_blur, cv.COLOR_BGR2HSV)
         mask = cv.inRange(hsv, lower_hsv, upper_hsv)
         dilation = cv.dilate(mask,kernel,iterations=1) # https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html
@@ -52,7 +54,7 @@ class plate_recognizer():
         plate = img[y:y+height,x:x+width] # isolate plate
 
         # image display
-        img_copy = copy.deepcopy(img)
+        img_copy = copy.deepcopy(img_cropped)
         cv.drawContours(img_copy, [largest_contour], -1, (0,255,0),2)
         cv.imshow("Image",img_copy)
         cv.waitKey(3)
