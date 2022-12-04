@@ -95,11 +95,14 @@ while(1):
     # https://medium.com/analytics-vidhya/opencv-findcontours-detailed-guide-692ee19eeb18
     contours_edge, _ = cv.findContours(edged, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     contours_edge = sorted(contours_edge,key=cv.contourArea,reverse=True) # largest to smallest contours
-    largest_contour = contours_edge[0]
-    # TODO: probably want the contour to have at least a certain size before we accept it as "valid"
-    x,y,width,height = cv.boundingRect(largest_contour) # coords of largest contour
-    plate = img[y:y+height,x:x+width] # isolate plate
-    cv.imshow("plate",plate)
+    if len(contours_edge) != 0:
+        largest_contour = contours_edge[0]
+        # TODO: probably want the contour to have at least a certain size before we accept it as "valid"
+        x,y,width,height = cv.boundingRect(largest_contour) # coords of largest contour
+        plate = img[y:y+height,x:x+width] # isolate plate
+        cv.imshow("plate",plate)
+    else: # no contours found
+        pass
     
     # TODO: perspective transformation
     # https://arccoder.medium.com/straighten-an-image-of-a-page-using-opencv-313182404b06

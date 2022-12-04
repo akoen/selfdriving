@@ -74,4 +74,4 @@ def create_plate(path, texture_path, num_plates=1):
 if __name__ == "__main__":
     path = os.path.dirname(os.path.realpath(__file__)) + "/"
     texture_path = '../media/materials/textures/'
-    create_plate(path, texture_path)
+    create_plate(path, texture_path, num_plates=10)
