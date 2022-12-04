@@ -1,125 +1,73 @@
 #!/usr/bin/python3
+from __future__ import print_function
+
+import roslib
+roslib.load_manifest('controller')
 import sys
-import cv2
+import rospy
+import cv2 as cv
+from std_msgs.msg import String
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
+from geometry_msgs.msg import Twist
 import numpy as np
-import os
-from itertools import groupby
+import copy
 
 
-if __name__ == "__main__":
-
-    def all_equal(iterable):
-        #https://stackoverflow.com/questions/3844801/check-if-all-elements-in-a-list-are-identical
-        g = groupby(iterable)
-        return next(g, True) and not next(g, False)
-
-
-    # image path
-    path = os.path.dirname(os.path.realpath(__file__)) + "/"
-    img_folder = "pictures"
-    img_name = "img_1.png"
-    full_path = os.path.join(path, img_folder, img_name)
-
-    frame = cv2.imread(full_path)
-    height,width,channels = frame.shape
-
-    cv2.imshow("image", frame)
-    cv2.waitKey(0)
-
-
-
-
-    # lower_blue = np.array([70, 50, 70])
-    # upper_blue = np.array([128, 255, 255])
-    # mask_blue = cv2.inRange(frame, lower_blue, upper_blue)
-
-
-    # frame_isolated = frame
-
-    # for i in range(height):
-    #     for j in range(width):
-    #         rgb = np.asarray(frame[i][j])
-    #         frame_isolated[i][j] = [255 if (all_equal(rgb) and i > 90 and i < 110) else 0 for i in rgb]
-
-    # cv2.imshow("image", mask_blue)
-    # cv2.waitKey(0)
-
-    #frame_parking_isolated = [[[255 for j in i] if all_equal(i) else [0 for j in i] for i in row] for row in frame]
-    #cv2.imshow("frame", np.asarray(frame_parking_isolated))
-
-
-    #frame_parking_isolated = [frame[i]]
+class plate_recognizer():
+    def __init__(self):
+        self.bridge = CvBridge()
+        self.image_sub = rospy.Subscriber("/R1/pi_camera/image_raw",Image,self.callback)
     
-    # parking thing where R,G,B all same value
-    #frame = 
+    def callback(self,data):
+        
+        uh = 176 # Upper Hue
+        us = 11 # Upper Sat
+        uv = 98 # Upper Value
+        lh = 115 # Lower Hue
+        ls = 0 # Lower Sat
+        lv = 89 # Lower Value
+        mb = 13 # Median Blur
 
-    # binary, want thing we're looking for to be 1, everything else 0
-    # to get centroid (x_bar, y_bar), do x_bar=M10/M00, y_bar=M01/M00
-    # M00 is 0th order moment in x and y, area of non-zero pixels (road)
-    # moment = cv2.moments(frame_binary_thresh_inv)
-    # x_centroid = moment["m10"] / (moment["m00"])
-    
+        lower_hsv = np.array([lh,ls,lv])
+        upper_hsv = np.array([uh,us,uv])
+        kernel = np.ones((17,17),np.uint8) # dilation kernel
 
-    # #SIFT and FLANN matching
-# #===================================
-#     sift = cv2.SIFT_create()
-#     FLANN_INDEX_KDTREE = 1
-#     index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-#     search_params = dict(checks=50)
-#     flann = cv2.FlannBasedMatcher(index_params, search_params)
-#     MIN_MATCH_COUNT = 10
+        try:
+            img=self.bridge.imgmsg_to_cv2(data, "bgr8")
+        except CvBridgeError as e:
+            print(e)
 
-#     # image path
-#     path = os.path.dirname(os.path.realpath(__file__)) + "/"
-#     img_folder = "pictures"
-#     img_name = "img_1.png"
-#     full_path = os.path.join(path, img_folder, img_name)
+        img_blur = cv.medianBlur(img,mb)
+        hsv = cv.cvtColor(img_blur, cv.COLOR_BGR2HSV)
+        mask = cv.inRange(hsv, lower_hsv, upper_hsv)
+        dilation = cv.dilate(mask,kernel,iterations=1) # https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html
+        edged = cv.Canny(dilation,75,200) # edges
+        
+        contours_edge, _ = cv.findContours(edged, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        contours_edge = sorted(contours_edge,key=cv.contourArea,reverse=True) # largest to smallest contours
+        largest_contour = contours_edge[0]
+        # TODO: probably want the contour to have at least a certain size before we accept it as "valid"
+        x,y,width,height = cv.boundingRect(largest_contour) # coords of largest contour
+        plate = img[y:y+height,x:x+width] # isolate plate
 
-#     # reference parking spot
-#     ref_img_name = "p_reference_course.png"
-#     ref_path_full = os.path.join(path, img_folder, ref_img_name)
-
-#     # read in image, grayscale, get keypoints
-#     ref_frame = cv2.imread(ref_path_full)
-#     ref_frame_gray = cv2.cvtColor(ref_frame, cv2.COLOR_BGR2GRAY)
-#     kp1, des1 = sift.detectAndCompute(ref_frame_gray, None) # no mask
-#     output_frame = ref_frame
-#     output_frame = cv2.drawKeypoints(ref_frame_gray, kp1, output_frame)
-
-#     # FLANN: https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_matcher/py_matcher.html
-#     # FLANN and homography: https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
-
-#     # get second image keypoints
-#     check_frame = cv2.imread(full_path)
-#     check_frame_gray = cv2.cvtColor(check_frame, cv2.COLOR_BGR2GRAY)
-#     kp2, des2 = sift.detectAndCompute(check_frame_gray,None)
-#     matches = flann.knnMatch(des1, des2, k=2)
-
-#     good = []
-#     for m,n in matches: #two closest matches
-#         if m.distance < 0.7*n.distance: #if matches are far enough apart
-#             good.append(m)
-
-#     if len(good)>MIN_MATCH_COUNT:
-#         src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
-#         dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
-
-#         M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
-#         matchesMask = mask.ravel().tolist()
-#         h,w,c = check_frame.shape # height, width, channels
-#         pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
-#         dst = cv2.perspectiveTransform(pts,M)
-#         img2 = cv2.polylines(check_frame,[np.int32(dst)],True,255,3, cv2.LINE_AA)
-#     else:
-#         print( "Not enough matches are found - {}/{}".format(len(good), MIN_MATCH_COUNT) )
-#         matchesMask = None
+        # image display
+        img_copy = copy.deepcopy(img)
+        cv.drawContours(img_copy, [largest_contour], -1, (0,255,0),2)
+        cv.imshow("Image",img_copy)
+        cv.waitKey(3)
 
 
-#     draw_params = dict(matchColor = (0,255,0),
-#                 singlePointColor = (255,0,0),
-#                 flags = 2)
+def main(args):
+    rospy.init_node('plate_recognition', anonymous=True)
+    pr = plate_recognizer()
 
-#     matched_image = cv2.drawMatchesKnn(ref_frame,kp1,check_frame,kp2,matches,None,**draw_params)
-#     cv2.imshow("matched image", matched_image)
-#     cv2.waitKey(0)
-# #===================================
+    try:
+        rospy.spin()
+        return
+    except KeyboardInterrupt:
+        print("Shutting down")
+    cv.destroyAllWindows()
+
+if __name__ == '__main__':
+    main(sys.argv)

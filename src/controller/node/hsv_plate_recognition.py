@@ -4,6 +4,7 @@ import numpy as np
 import cv2 as cv
 import time
 import os
+import copy
 
 
 path = os.path.dirname(os.path.realpath(__file__)) + "/"
@@ -108,34 +109,49 @@ while(1):
     # M = cv.getPerspectiveTransform(np.float32(),np.float32())
     # perspective_transform = cv.warpPerspective(plate,M,(width,height))
 
-    cv.drawContours(img, [largest_contour], -1, (0,255,0),2)
-    cv.imshow("contours", img)
+    img_copy = copy.deepcopy(img)
+    cv.drawContours(img_copy, [largest_contour], -1, (0,255,0),2)
+    cv.imshow("contours",img_copy)
 
-    # get plate blue mask
-    # isolates blue
+    # blue hsv mask
     uh_plate = 125
     us_plate = 255
     uv_plate = 255
     lh_plate = 118
     ls_plate = 40
     lv_plate = 40
-
     lower_hsv_plate = np.array([lh_plate,ls_plate,lv_plate])
     upper_hsv_plate = np.array([uh_plate,us_plate,uv_plate])
 
+
+    # mask
     hsv_plate = cv.cvtColor(plate, cv.COLOR_BGR2HSV)
     mask_plate = cv.inRange(hsv_plate,lower_hsv_plate,upper_hsv_plate)
     cv.imshow("mask plate",mask_plate)
-    # TODO: get plate letters
-    # contours_plate, _ = cv.findContours(mask_plate,cv.RETR_TREE,cv.CHAIN_APPROX_SIMPLE)
-    # contours_plate = sorted(contours_plate,key=cv.contourArea,reverse=True)
-    # cv.drawContours(plate,contours_plate,-1,(0,255,0),1)
-    # cv.imshow("contours plate",plate)
 
-    # for cntr in contours_plate:
-    #     x,y,width,height = cv.boundingRect(cntr)
-    #     char = plate[y:y+height,x:x+height]
-    #     cv.imshow("char from contours", char)
+    # erode
+    kernel_erode = np.ones((2,2),np.uint8)
+    mask_erode = cv.erode(mask_plate,kernel_erode,iterations=1)
+    cv.imshow("erode plate",mask_erode)
+
+    # contours
+    contours_plate, _ = cv.findContours(mask_erode,cv.RETR_TREE,cv.CHAIN_APPROX_SIMPLE)
+    contours_plate = sorted(contours_plate,key=cv.contourArea,reverse=True)
+    plate_copy = copy.deepcopy(plate)
+    cv.drawContours(plate_copy,contours_plate,-1,(0,255,0),1)
+    cv.imshow("contours plate",plate_copy)
+
+    # contour bounding rectangles
+    char_bound_rects = np.zeros((len(contours_plate),4))
+    for i in range(len(contours_plate)):
+        x,y,width,height = cv.boundingRect(contours_plate[i])
+        for i in range(len(char_bound_rects)):
+            print(i)
+        # char_bound_rects[i]
+        cv.rectangle(plate_copy,(x,y+height),(x+width,y),(255,0,0),1) # (top left), (bottom right)
+        cv.imshow("rectangle contours",plate_copy)
+        # char = plate[y:y+height,x:x+height]
+        # cv.imshow("char from contours", char)
 
     cv.putText(mask,'Lower HSV: [' + str(lh) +',' + str(ls) + ',' + str(lv) + ']', (10,30), font, 0.5, (200,255,155), 1, cv.LINE_AA)
     cv.putText(mask,'Upper HSV: [' + str(uh) +',' + str(us) + ',' + str(uv) + ']', (10,60), font, 0.5, (200,255,155), 1, cv.LINE_AA)
