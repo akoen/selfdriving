@@ -108,7 +108,7 @@ def detect_lane(frame):
             slope = fit[0]
             intercept = fit[1]
             if np.abs(slope) > 0.08 and (max(y1,y2)>Y_MIN or (min(x1,x2) > X_MIN)):
-                print(max(y1,y2), min(x1,x2), width-max(x1,x2))
+                # print(max(y1,y2), min(x1,x2), width-max(x1,x2))
                 if slope < 0:
                     if x1 < left_region_boundary and x2 < left_region_boundary:
                         left_fit.append((slope, intercept))
@@ -125,7 +125,7 @@ def detect_lane(frame):
 
 
     # print(lines)
-    frame_out = cv2.addWeighted(frame_out, 0.6, cv2.polylines(np.zeros_like(frame), lines, False, (255,255,255), 2), 0.6, 1)
+    frame_out = cv2.addWeighted(frame_out, 1, cv2.polylines(np.zeros_like(frame), lines, False, (255,255,255), 2), 0.6, 1)
     frame_out = cv2.addWeighted(frame_out, 1, cv2.polylines(np.zeros_like(frame), reject_lines, False, (0,0,255), 2), 0.3, 1)
 
     if len(left_fit) > 0:
