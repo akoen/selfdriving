@@ -48,33 +48,84 @@ upper_hsv = np.array([uh,us,uv])
 font = cv.FONT_HERSHEY_SIMPLEX
 initial_dilate_kernel = np.ones((17,17),np.uint8) # dilation kernel
 model_dilate_kernel = np.ones((2,2),np.uint8)
-timer_threshold = 1 # seconds
 
 class plate_recognizer():
+
     def __init__(self):
         self.bridge = CvBridge()
-        self.image_sub = rospy.Subscriber("/R1/pi_camera/image_raw",Image,self.camera_callback)
+        # self.camera_callback = rospy.Subscriber("/R1/pi_camera/image_raw",Image,self.camera_callback)
+        self.camera_instance = "/R1/pi_camera/image_raw"
         self.conv_model = keras.models.load_model('/home/fizzer/ros_ws/src/controller/node/conv_model_74k')
         
         self.timer_started = False
-        self.plates_in_duration = [] # plates to process (plate, area)
+        self.timer = 0 # float seconds
+        self.timer_elapsed_threshold = 1 # seconds
+        self.plates_in_duration = []
 
-    def timer_callback(self,event):
-        print("entered timer callback")
-        self.timer_started = False
+    
+    def detect_plate_in_image(self, img):
+        plate = 0
+        plate_area = 0
+        plate_cntr_found = False
 
+        # plate mask
+        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+        mask = cv.inRange(hsv, lower_hsv, upper_hsv)
+        dilation = cv.dilate(mask,initial_dilate_kernel,iterations=1) # https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html
+        edged = cv.Canny(dilation,75,200) # edges
+        
+        contours_edge, _ = cv.findContours(edged, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        contours_edge = sorted(contours_edge,key=cv.contourArea,reverse=True) # largest to smallest contours
+        
+        if len(contours_edge) != 0: # prevent indexing errors when no contour found
+            for cntr in contours_edge:
+                x_cntr, y_cntr, width_cntr, height_cntr = cv.boundingRect(cntr)
+                # check whether contour in acceptable area of screen
+                #TODO: probably want two areas, one for the plates on the left, one for the plate(s) on the right
+                if y_cntr > low_cntr_thresh_y and y_cntr+height_cntr < high_cntr_thresh_y and x_cntr > low_cntr_thresh_x and x_cntr < high_cntr_thresh_x:
+                    largest_contour = cntr
+                    plate_cntr_found = True
+                    break
+                else:
+                    continue
+                
+        img_copy = copy.deepcopy(img)
+        cv.rectangle(img_copy,(low_cntr_thresh_x,low_cntr_thresh_y),(high_cntr_thresh_x,high_cntr_thresh_y), (0,0,255),2)
+        
+        if plate_cntr_found:
+            # accept contour only if has certain area
+            x,y,width,height = cv.boundingRect(largest_contour) # coordinates of largest contour
+            largest_contour_area = width*height
+            if largest_contour_area > plate_cntr_area_low_thresh and largest_contour_area < plate_cntr_area_high_thresh:
+                cv.drawContours(img_copy, [largest_contour], -1, (0,255,0),2)
+                plate = img[y:y+height,x:x+width] # crop to isolate plate
+                plate_area = height*width
+
+        # out.write(img_copy)
+        cv.imshow("contours with bounds",img_copy)
+        cv.waitKey(3)
+
+        return plate_cntr_found, plate, plate_area
+
+    def get_best_plate(self):
         # get plate with max area
         plate_areas = np.asarray([self.plates_in_duration[i][1] for i in range(len(self.plates_in_duration))])
         plate_areas_sorted = list(reversed(plate_areas.argsort())) # index of max area is 0th element, descending
         plate = self.plates_in_duration[plate_areas_sorted[0]][0]
-        self.plates_in_duration = [] # clear for next batch
+        
+        print(f"plate areas: {plate_areas}")
+        print(f"chosen plate shape: {plate.shape}")
 
+        cv.imshow("plate", plate)
+        cv.waitKey(3)
+        
+        return plate
+
+    def process_plate(self, plate):
         # mask blue
         hsv_plate = cv.cvtColor(plate, cv.COLOR_BGR2HSV)
         mask_plate = cv.inRange(hsv_plate,lower_hsv_plate,upper_hsv_plate)
         cv.imshow("mask plate",mask_plate)
-
-        print("got blue mask")
 
         # get contours (no erode seems ok)
         contours_plate, hierarchy = cv.findContours(mask_plate,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
@@ -101,6 +152,10 @@ class plate_recognizer():
             if x_i == 0 or x_i + width_i == plate_width or x_i+width_i >= plate_width - hystersis:
                 bounding_rects_cropped.remove(i)
 
+        cv.waitKey(3)
+        return bounding_rects_cropped
+
+    def process_characters(self, bounding_rects_cropped, plate):
         # sort bounding rects by area
         areas = np.asarray([bounding_rects_cropped[i][1] for i in range(len(bounding_rects_cropped))])
         max_area_indicies = list(reversed(areas.argsort())) # index of max area is 0th element, descending
@@ -157,6 +212,9 @@ class plate_recognizer():
             char = plate[y_c-padding:y_c+height_c+padding,x_c-padding:x_c+width_c+padding] # cropped char from plate
             chars.append(char)
 
+        return chars
+
+    def predict_characters(self, chars, plate):
         # predict characters
         predictions = []
         for k in chars:
@@ -171,71 +229,56 @@ class plate_recognizer():
         cv.imshow("plate", plate)
 
         cv.waitKey(3)
+        return max_predictions_chars
 
-
-    def camera_callback(self,data):
-        print("entered camera callback")
-        try:
-            img=self.bridge.imgmsg_to_cv2(data, "bgr8")
-        except CvBridgeError as e:
-            print(e)
-
-        img_height, img_width, _ = img.shape
-        # img_blur = cv.medianBlur(img,mb) # adding median blur makes plate detection terrible
-        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-        mask = cv.inRange(hsv, lower_hsv, upper_hsv)
-        dilation = cv.dilate(mask,initial_dilate_kernel,iterations=1) # https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html
-        edged = cv.Canny(dilation,75,200) # edges
-        
-        contours_edge, _ = cv.findContours(edged, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        contours_edge = sorted(contours_edge,key=cv.contourArea,reverse=True) # largest to smallest contours
-        
-        plate_cntr_found = False
-        if len(contours_edge) != 0: # prevent indexing errors when no contour found
-            for cntr in contours_edge:
-                x_cntr, y_cntr, width_cntr, height_cntr = cv.boundingRect(cntr)
-                # check whether contour in acceptable area of screen
-                #TODO: probably want two areas, one for the plates on the left, one for the plate(s) on the right
-                if y_cntr > low_cntr_thresh_y and y_cntr+height_cntr < high_cntr_thresh_y and x_cntr > low_cntr_thresh_x and x_cntr < high_cntr_thresh_x:
-                    largest_contour = cntr
-                    plate_cntr_found = True
-                    break
-                else:
-                    continue
-                
-        img_copy = copy.deepcopy(img)
-        cv.rectangle(img_copy,(low_cntr_thresh_x,low_cntr_thresh_y),(high_cntr_thresh_x,high_cntr_thresh_y), (0,0,255),2)
-        
-        if plate_cntr_found:
-            # accept contour if has certain area
-            x,y,width,height = cv.boundingRect(largest_contour) # coordinates of largest contour
-            largest_contour_area = width*height
-            if largest_contour_area > plate_cntr_area_low_thresh and largest_contour_area < plate_cntr_area_high_thresh:
-                
-                # start timer
-                if self.timer_started == False:
-                    rospy.Timer(rospy.Duration(0.5), self.timer_callback, oneshot=True) # timer will only pop once
-                    self.timer_started = True
-
-                cv.drawContours(img_copy, [largest_contour], -1, (0,255,0),2)
-                plate = img[y:y+height,x:x+width] # crop to isolate plate
-                plate_area = height*width
-                self.plates_in_duration.append(([plate, plate_area]))
-
-        # out.write(img_copy)
-        cv.imshow("contours with bounds",img_copy)
-        cv.waitKey(3)
 
 def main(args):
     rospy.init_node('plate_recognition', anonymous=True)
     pr = plate_recognizer()
 
-    try:
-        rospy.spin()
-        return
-    except KeyboardInterrupt:
-        print("Shutting down")
-    cv.destroyAllWindows()
+    while True:
+        # wait for data from camera
+        data = None
+        while data is None:
+            try:
+                data = rospy.wait_for_message(pr.camera_instance, Image, timeout=5) # timeout in seconds
+                print('got image')
+            except:
+                pass
+
+        # get image, check if contains plate
+        try:
+            img=pr.bridge.imgmsg_to_cv2(data, "bgr8")
+            plate_found, plate, plate_area = pr.detect_plate_in_image(img)
+            print(f"plate_found: {plate_found}")
+        except CvBridgeError as e:
+            print(e)
+
+        # TODO: could also try continuous plates 
+        # if img contains plate and last image contains plate, add to buffer, as soon as get image that doesn't contain plate when last img did contain plate, process buffer)
+        if plate_found and pr.timer_started == False: # first plate in sequence
+            print("started timer")
+            pr.timer_started = True
+            pr.timer = rospy.get_time() # this is the "start of sequence" time
+            pr.plates_in_duration.append([plate, plate_area])
+            continue # beginning of while True
+        
+        elif plate_found and pr.timer_started and rospy.get_time() - pr.timer < pr.timer_elapsed_threshold: # add plate to sequence
+            print("added plate to sequence")
+            print(f"num sequence plates: {len(pr.plates_in_duration)}")
+            pr.plates_in_duration.append([plate, plate_area])
+        
+        elif pr.timer_started and rospy.get_time() - pr.timer >= pr.timer_elapsed_threshold: # if timer has elapsed
+            print('processing plate batch')
+            plate = pr.get_best_plate() # get plate (in duration) with largest area
+            bounding_rects_cropped = pr.process_plate(plate) # get bounding rects
+            chars = pr.process_characters(bounding_rects_cropped, plate) # get char bounding rects
+            prediction = pr.predict_characters(chars, plate) # get final prediction
+
+            pr.plates_in_duration = [] # reset plate buffer
+            pr.timer_started = False # reset timer
+        
+        # else, no plate was found, do nothing
 
 if __name__ == '__main__':
     main(sys.argv)
