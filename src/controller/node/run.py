@@ -70,7 +70,7 @@ class line_following:
 
     if steer_angle is not None:
       self.PID_value = self.angle_control.send(steer_angle) + self.offset_control.send(offset)
-      print(f"{steer_angle:.2f}, {offset:.2f}, {self.PID_value:.2f}")
+      # print(f"{steer_angle:.2f}, {offset:.2f}, {self.PID_value:.2f}")
 
     move.angular.z = -self.PID_value
     try:
