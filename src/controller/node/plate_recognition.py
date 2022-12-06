@@ -39,9 +39,11 @@ lv = 90 # Lower Value
 # mb = 1 # Median Blur, 13
 high_cntr_thresh_y = 575
 low_cntr_thresh_y = 450
-high_cntr_thresh_x = 1200
-low_cntr_thresh_x = 5
-plate_cntr_area_low_thresh = 6500 # increasing this helped to only capture plate when close (very close since it's pretty high)
+high_cntr_thresh_x_right = 1275
+low_cntr_thresh_x_right = 1000
+high_cntr_thresh_x_left = 300
+low_cntr_thresh_x_left = 3
+plate_cntr_area_low_thresh = 5500 # 6500 good (spotty on right)
 plate_cntr_area_high_thresh = 100000 # infinite
 lower_hsv = np.array([lh,ls,lv])
 upper_hsv = np.array([uh,us,uv])
@@ -59,7 +61,7 @@ class plate_recognizer():
         
         self.timer_started = False
         self.timer = 0 # float seconds
-        self.timer_elapsed_threshold = 1 # seconds
+        self.timer_elapsed_threshold = 4 # seconds, 5 worked fine
         self.plates_in_duration = []
 
     
@@ -80,28 +82,28 @@ class plate_recognizer():
         if len(contours_edge) != 0: # prevent indexing errors when no contour found
             for cntr in contours_edge:
                 x_cntr, y_cntr, width_cntr, height_cntr = cv.boundingRect(cntr)
-                # check whether contour in acceptable area of screen
-                #TODO: probably want two areas, one for the plates on the left, one for the plate(s) on the right
-                if y_cntr > low_cntr_thresh_y and y_cntr+height_cntr < high_cntr_thresh_y and x_cntr > low_cntr_thresh_x and x_cntr < high_cntr_thresh_x:
+                # check whether contour in acceptable area of screen           
+                if (y_cntr > low_cntr_thresh_y and y_cntr+height_cntr < high_cntr_thresh_y and x_cntr > low_cntr_thresh_x_left and x_cntr+width_cntr < high_cntr_thresh_x_left) \
+                    or (y_cntr > low_cntr_thresh_y and y_cntr+height_cntr < high_cntr_thresh_y and x_cntr > low_cntr_thresh_x_right and x_cntr + width_cntr < high_cntr_thresh_x_right):
                     largest_contour = cntr
                     plate_cntr_found = True
                     break
-                else:
-                    continue
                 
         img_copy = copy.deepcopy(img)
-        cv.rectangle(img_copy,(low_cntr_thresh_x,low_cntr_thresh_y),(high_cntr_thresh_x,high_cntr_thresh_y), (0,0,255),2)
+        cv.rectangle(img_copy,(low_cntr_thresh_x_left,low_cntr_thresh_y),(high_cntr_thresh_x_left,high_cntr_thresh_y), (0,0,255),2)
+        cv.rectangle(img_copy,(low_cntr_thresh_x_right,low_cntr_thresh_y),(high_cntr_thresh_x_right,high_cntr_thresh_y), (0,0,255),2)
         
         if plate_cntr_found:
             # accept contour only if has certain area
             x,y,width,height = cv.boundingRect(largest_contour) # coordinates of largest contour
             largest_contour_area = width*height
+            # TODO: maybe two area thresholds, one for left and one for right (right one would be smaller than left one)
             if largest_contour_area > plate_cntr_area_low_thresh and largest_contour_area < plate_cntr_area_high_thresh:
                 cv.drawContours(img_copy, [largest_contour], -1, (0,255,0),2)
                 plate = img[y:y+height,x:x+width] # crop to isolate plate
                 plate_area = height*width
 
-        # out.write(img_copy)
+        out.write(img_copy)
         cv.imshow("contours with bounds",img_copy)
         cv.waitKey(3)
 
@@ -112,14 +114,15 @@ class plate_recognizer():
         plate_areas = np.asarray([self.plates_in_duration[i][1] for i in range(len(self.plates_in_duration))])
         plate_areas_sorted = list(reversed(plate_areas.argsort())) # index of max area is 0th element, descending
         plate = self.plates_in_duration[plate_areas_sorted[0]][0]
+        plate_area = plate_areas[plate_areas_sorted[0]] # area of plate with max area
         
         print(f"plate areas: {plate_areas}")
-        print(f"chosen plate shape: {plate.shape}")
 
-        cv.imshow("plate", plate)
-        cv.waitKey(3)
-        
-        return plate
+        if(plate_area!=0):
+            cv.imshow("plate", plate)
+            cv.waitKey(3)
+
+        return plate, plate_area
 
     def process_plate(self, plate):
         # mask blue
@@ -270,7 +273,13 @@ def main(args):
         
         elif pr.timer_started and rospy.get_time() - pr.timer >= pr.timer_elapsed_threshold: # if timer has elapsed
             print('processing plate batch')
-            plate = pr.get_best_plate() # get plate (in duration) with largest area
+            plate, plate_area = pr.get_best_plate() # get plate (in duration) with largest area
+            
+            if plate_area == 0:
+                pr.plates_in_duration = []
+                pr.timer_started = False
+                continue # beginning of while True
+
             bounding_rects_cropped = pr.process_plate(plate) # get bounding rects
             chars = pr.process_characters(bounding_rects_cropped, plate) # get char bounding rects
             prediction = pr.predict_characters(chars, plate) # get final prediction
