@@ -12,8 +12,7 @@
 
 	<include file="$(find enph353_utils)/launch/robots.launch"/>
 	<include file="$(find enph353_utils)/launch/npcs.launch">
-		<!-- <arg name="spawn_pedestrians" value="$(arg spawn_pedestrians)"/> -->
-		<arg name="spawn_pedestrians" value="false"/>
+		<arg name="spawn_pedestrians" value="$(arg spawn_pedestrians)"/>
 		<arg name="spawn_vehicles" value="$(arg spawn_vehicles)"/>
 	</include>
 
