@@ -100,22 +100,42 @@ class plate_recognizer():
                 # check whether contour in acceptable area of screen           
                 if (y_cntr > low_cntr_thresh_y and y_cntr+height_cntr < high_cntr_thresh_y and x_cntr > low_cntr_thresh_x_left and x_cntr+width_cntr < high_cntr_thresh_x_left) \
                     or (y_cntr > low_cntr_thresh_y and y_cntr+height_cntr < high_cntr_thresh_y and x_cntr > low_cntr_thresh_x_right and x_cntr + width_cntr < high_cntr_thresh_x_right):
-                    largest_contour = cntr
-                    plate_cntr_found = True
-                    break
-                
+                    approx = cv.approxPolyDP(cntr, 0.05*cv.arcLength(cntr, True), True)
+                    if len(approx) == 4:
+                        largest_contour = cntr
+                        plate_cntr_found = True
+                        print(approx)
+                        sorted_x = np.asarray(sorted(np.squeeze(approx), key=lambda x: x[0]))
+                        sort_y = lambda x:x[1]
+                        
+                        approx_sorted = np.zeros(sorted_x.shape)
+                        approx_sorted[0:2,:] = sorted(sorted_x[0:2,:], key=sort_y)
+                        approx_sorted[2:4,:] = sorted(sorted_x[2:4,:], key=sort_y)
+
+                        print(approx_sorted)
+
+                        break
+
         img_copy = copy.deepcopy(img)
+
         cv.rectangle(img_copy,(low_cntr_thresh_x_left,low_cntr_thresh_y),(high_cntr_thresh_x_left,high_cntr_thresh_y), (0,0,255),2)
         cv.rectangle(img_copy,(low_cntr_thresh_x_right,low_cntr_thresh_y),(high_cntr_thresh_x_right,high_cntr_thresh_y), (0,0,255),2)
         
+        plate_width = 220
+        plate_height = 60
         if plate_cntr_found:
             # accept contour only if has certain area
             x,y,width,height = cv.boundingRect(largest_contour) # coordinates of largest contour
             largest_contour_area = width*height
+
+            matrix = cv.getPerspectiveTransform(approx_sorted.astype(np.float32), np.float32([[0, 0], [0,plate_height-1], [plate_width-1,0], [plate_width-1,plate_height-1]]))
+            plate = cv.warpPerspective(img_copy, matrix, (plate_width,plate_height), cv.INTER_LINEAR, borderMode=cv.BORDER_CONSTANT, borderValue=(0,0,0))
+
             # TODO: maybe two area thresholds, one for left and one for right (right one would be smaller than left one)
             if largest_contour_area > plate_cntr_area_low_thresh and largest_contour_area < plate_cntr_area_high_thresh:
-                cv.drawContours(img_copy, [largest_contour], -1, (0,255,0),2)
-                plate = img[y:y+height,x:x+width] # crop to isolate plate
+                # cv.drawContours(img_copy, [largest_contour], -1, (0,255,0),2)
+                cv.drawContours(img_copy, [approx], 0, (255,255,255), 3)        
+                #plate = img[y:y+height,x:x+width] # crop to isolate plate
                 plate_area = height*width
 
         # out.write(img_copy)

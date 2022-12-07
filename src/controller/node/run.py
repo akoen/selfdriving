@@ -54,8 +54,6 @@ class Selfdriving:
         cv2.imshow("Image window", frame_out)
         cv2.waitKey(3)
 
-        print(rospy.get_time())
-
         try:
             self.pub.publish(move)
         except CvBridgeError as e:
