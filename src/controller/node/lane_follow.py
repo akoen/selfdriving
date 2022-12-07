@@ -49,7 +49,7 @@ def detect_lane(frame):
 
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    lower_blue = np.array([0, 0, 100])
+    lower_blue = np.array([0, 0, 140])
     upper_blue = np.array([255, 0, 255])
 
     mask = cv2.inRange(hsv, lower_blue, upper_blue)
@@ -69,7 +69,7 @@ def detect_lane(frame):
     rho = 1  # precision in pixel, i.e. 1 pixel
     angle = np.pi / 180  # degree in radian, i.e. 1 degree
     min_threshold = 40  # minimal of votes
-    line_segments = cv2.HoughLinesP(cropped_edges, rho, angle, min_threshold, np.array([]), minLineLength=1, maxLineGap=20)
+    line_segments = cv2.HoughLinesP(cropped_edges, rho, angle, min_threshold, np.array([]), minLineLength=10, maxLineGap=20)
     # lsd = cv2.createLineSegmentDetector(cv2.LSD_REFINE_NONE, 0.2)
     # line_segments = lsd.detect(mask)[0]
 
@@ -96,8 +96,10 @@ def detect_lane(frame):
     left_region_boundary = width * (1 - boundary)  # left lane line segment should be on left 2/3 of the screen
     right_region_boundary = width * boundary # right lane line segment should be on left 2/3 of the screen
 
-    Y_MIN = 600
-    X_MIN = 400
+    Y_MIN = 550
+    X_MIN = 450
+
+    height, width, _ = frame.shape
 
     for line_segment in line_segments:
         for x1, y1, x2, y2 in line_segment:
@@ -107,6 +109,7 @@ def detect_lane(frame):
             fit = np.polyfit((x1, x2), (y1, y2), 1)
             slope = fit[0]
             intercept = fit[1]
+            # if np.abs(slope) > 0.08 and (max(y1,y2)>Y_MIN or (min(x1,x2) > X_MIN and (max(x1, x2) < width-X_MIN))):
             if np.abs(slope) > 0.08 and (max(y1,y2)>Y_MIN or (min(x1,x2) > X_MIN)):
                 # print(max(y1,y2), min(x1,x2), width-max(x1,x2))
                 if slope < 0:
@@ -128,6 +131,8 @@ def detect_lane(frame):
     frame_out = cv2.addWeighted(frame_out, 0.6, cv2.polylines(np.zeros_like(frame), lines, False, (255,255,255), 2), 0.6, 1)
     frame_out = cv2.addWeighted(frame_out, 1, cv2.polylines(np.zeros_like(frame), reject_lines, False, (0,0,255), 2), 0.3, 1)
 
+    frame_out = cv2.rectangle(frame_out, (0, 0), (X_MIN, Y_MIN), (0, 0, 255, 0.3), 1)
+
     if len(left_fit) > 0:
         left_fit_average = np.average(left_fit, axis=0, weights=left_weights)
         lane_lines.append(make_points(frame, left_fit_average))
@@ -148,7 +153,6 @@ def detect_lane(frame):
     frame_out = cv2.addWeighted(frame_out, 1, line_image, 1, 1)
 
     heading_image = np.zeros_like(frame)
-    height, width, _ = frame.shape
 
     if len(lane_lines) == 0:
         logging.info('No lane lines detected, do nothing')

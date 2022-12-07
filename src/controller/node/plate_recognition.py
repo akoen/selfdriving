@@ -42,14 +42,26 @@ low_cntr_thresh_y = 450
 high_cntr_thresh_x_right = 1275
 low_cntr_thresh_x_right = 1000
 high_cntr_thresh_x_left = 300
-low_cntr_thresh_x_left = 3
+low_cntr_thresh_x_left = 0
 plate_cntr_area_low_thresh = 5500 # 6500 good (spotty on right)
 plate_cntr_area_high_thresh = 100000 # infinite
 lower_hsv = np.array([lh,ls,lv])
 upper_hsv = np.array([uh,us,uv])
 font = cv.FONT_HERSHEY_SIMPLEX
 initial_dilate_kernel = np.ones((17,17),np.uint8) # dilation kernel
-model_dilate_kernel = np.ones((2,2),np.uint8)
+model_erode_kernel = np.ones((2,2),np.uint8) # (2,2) works well
+
+# publishing to score tracker
+# num_plates_captured = 0
+pub_plate = rospy.Publisher("/license_plate", String, queue_size=4)
+team_name = "Alex and Mischa"
+team_password = "password"
+register_plate_location = "0"
+stop_plate_location = "-1"
+garbage_plate = "XXXX"
+
+def send_plate(plate_location, plate_id):
+    pub_plate.publish(f"{team_name},{team_password},{plate_location},{plate_id}")
 
 class plate_recognizer():
 
@@ -58,11 +70,14 @@ class plate_recognizer():
         # self.camera_callback = rospy.Subscriber("/R1/pi_camera/image_raw",Image,self.camera_callback)
         self.camera_instance = "/R1/pi_camera/image_raw"
         self.conv_model = keras.models.load_model('/home/fizzer/ros_ws/src/controller/node/conv_model_74k')
-        
+
         self.timer_started = False
         self.timer = 0 # float seconds
-        self.timer_elapsed_threshold = 5 # seconds
+        self.timer_elapsed_threshold = 3 # seconds
         self.plates_in_duration = []
+
+        time.sleep(1) # wait for node init
+        send_plate(register_plate_location, garbage_plate) # register team
 
     def detect_plate_in_image(self, img):
         plate = 0
@@ -165,9 +180,9 @@ class plate_recognizer():
         # split large contours (when blue bleeds between letters)
         bounding_rects_split = copy.deepcopy(bounding_rects_cropped)
         max_rect_index = max_area_indicies[0]
-        max_rect_area = areas[max_rect_index]
-        split_rectangle_threshold = 1.5 # multiplication factor
-        second_max_rect_area = areas[max_area_indicies[1]]
+        # max_rect_area = areas[max_rect_index]
+        # split_rectangle_threshold = 1.5 # multiplication factor
+        # second_max_rect_area = areas[max_area_indicies[1]]
         
         # if max_rect_area >= split_rectangle_threshold*second_max_rect_area: # requires tweaking threshold, more finnickey
         if len(areas) <= 3: # if only three contours
@@ -205,33 +220,41 @@ class plate_recognizer():
 
         # isolate characters
         chars = []
-        count = 0
         for c in range(len(char_bounding_rects)):
             x_c = char_bounding_rects[c][0]
             y_c = char_bounding_rects[c][1]
             width_c = char_bounding_rects[c][2]
             height_c = char_bounding_rects[c][3]
-            padding = 1 # additional pixels to include, for if we crop in too much
-            char = plate[y_c-padding:y_c+height_c+padding,x_c-padding:x_c+width_c+padding] # cropped char from plate
-            count += 1
+            x_padding_left = 2 # additional pixels to include, for if we crop in too much
+            x_padding_right = 2
+            y_padding_high = 1
+            y_padding_low = 1
+            char = plate[y_c-y_padding_low:y_c+height_c+y_padding_high,x_c-x_padding_left:x_c+width_c+x_padding_right] # cropped char from plate
             chars.append(char)
-            cv.imshow(f"char{count}", char)
-
-        cv.waitKey(3)
 
         return chars
 
     def predict_characters(self, chars, plate):
         # predict characters
         predictions = []
+        count = 0
         for k in chars:
-            # TODO: experiment with smoothing and sharpening
-            char_img = cv.erode(cv.cvtColor(k,cv.COLOR_BGR2GRAY),model_dilate_kernel,iterations=1) # helps "sharpen" letters, can experment with kernel size
-            sharpen_kernel = np.array([[0,-1,0], [-1,5,-1], [0,-1,-0]])
-            # char_img_sharp = 
-            char_img_resized = cv.resize(char_img, (50,80)) # resize for network
+            char_img = cv.erode(cv.cvtColor(k,cv.COLOR_BGR2GRAY),model_erode_kernel,iterations=1) # helps "sharpen" letters, can experment with kernel size
+            char_blur = cv.GaussianBlur(char_img, (3,3),0)
+            sharpen_kernel = np.array([[0,-1,0], [-1,5,-1], [0,-1,0]])
+            #[[-1,0,-1], [-1,9,-1], [-1,0,-1]] is slightly white on slanted images, otherwise good
+            # [[0,-1,0], [-1,5,-1], [0,-1,0]] not as good, but could work with binary mask
+            char_img_sharp = cv.filter2D(char_blur, ddepth=-1, kernel=sharpen_kernel)
+            binary_threshold = 65 # below this, black, above this, white
+            char_img_sharp = cv.threshold(char_img_sharp, binary_threshold, 255, cv.THRESH_BINARY)[1]
+            # char_img_sharp = cv.GaussianBlur(char_img_sharp, (1,1),0)
+
+            char_img_resized = cv.resize(char_img_sharp, (50,80)) # resize for network
+            cv.imshow(f"resized char{count}", char_img_resized)
+
             prediction = [self.conv_model.predict(np.expand_dims(char_img_resized,axis=0))[0]]
             predictions.append(prediction)
+            count += 1
 
         max_predictions = [np.argmax(i) for i in predictions]
         max_predictions_chars = [chr(i-10+65) if i >= 11 else str(i) for i in max_predictions]
@@ -245,8 +268,13 @@ class plate_recognizer():
 def main(args):
     rospy.init_node('plate_recognition', anonymous=True)
     pr = plate_recognizer()
+    num_plates_captured = 1
 
     while True:
+        if num_plates_captured == 11:
+            send_plate(stop_plate_location, garbage_plate)
+            break
+        
         # wait for data from camera
         data = None
         while data is None:
@@ -289,6 +317,17 @@ def main(args):
             bounding_rects_cropped = pr.process_plate(plate) # get bounding rects
             chars = pr.process_characters(bounding_rects_cropped, plate) # get char bounding rects
             prediction = pr.predict_characters(chars, plate) # get final prediction
+
+            num_plates_captured += 1
+            if num_plates_captured == 7:
+                send_plate(1, ''.join(prediction))
+            elif num_plates_captured != 8 and num_plates_captured != 9 and num_plates_captured < 10: # ignore two repeated plates
+                send_plate(num_plates_captured, ''.join(prediction))
+            elif num_plates_captured >= 10:
+                if num_plates_captured == 10:
+                    send_plate(8, ''.join(prediction))
+                elif num_plates_captured == 11:
+                    send_plate(7, ''.join(prediction))
 
             pr.plates_in_duration = [] # reset plate buffer
             pr.timer_started = False # reset timer

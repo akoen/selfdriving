@@ -1,7 +1,7 @@
 <launch>
   <include file="$(find enph353_utils)/launch/sim.launch">
-    <arg name="spawn_pedestrians" value="false"/>
-    <arg name="spawn_vehicles" value="false"/>
+    <arg name="spawn_pedestrians" value="true"/>
+    <arg name="spawn_vehicles" value="true"/>
   </include>
   <node pkg="controller"
         type="run.py"
@@ -15,13 +15,13 @@
         output="screen"
         >
   </node>
-  <!-- <node pkg="enph353_utils"
+  <node pkg="enph353_utils"
         type="score_tracker.py"
         name="tracker"
         output="screen"
         >
   </node>
-  <node pkg="controller"
+  <!-- <node pkg="controller"
         type="publish_plates.py"
         name="pubplates"
         output="screen"

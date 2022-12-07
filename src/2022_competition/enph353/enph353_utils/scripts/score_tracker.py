@@ -19,7 +19,8 @@ class Window(QtWidgets.QMainWindow):
 
     def __init__(self):
         super(Window, self).__init__()
-        loadUi("./score_tracker.ui", self)
+        # loadUi("./score_tracker.ui", self)
+        loadUi("/home/fizzer/ros_ws/src/2022_competition/enph353/enph353_utils/scripts/score_tracker.ui", self)
 
         pixmap = QPixmap('ENPH_vs_UBC_Parking.svg')
         self.label_QL.setPixmap(pixmap)
