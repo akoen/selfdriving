@@ -125,13 +125,8 @@ def detect_lane(frame):
             else:
                 reject_lines.append(np.array([[x1, y1], [x2, y2]], dtype=int))
 
-
-
-    # print(lines)
-    frame_out = cv2.addWeighted(frame_out, 0.6, cv2.polylines(np.zeros_like(frame), lines, False, (255,255,255), 2), 0.6, 1)
+    frame_out = cv2.addWeighted(frame_out, 0.7, cv2.polylines(np.zeros_like(frame), lines, False, (255,255,255), 2), 0.6, 1)
     frame_out = cv2.addWeighted(frame_out, 1, cv2.polylines(np.zeros_like(frame), reject_lines, False, (0,0,255), 2), 0.3, 1)
-
-    frame_out = cv2.rectangle(frame_out, (0, 0), (X_MIN, Y_MIN), (0, 0, 255, 0.3), 1)
 
     if len(left_fit) > 0:
         left_fit_average = np.average(left_fit, axis=0, weights=left_weights)

@@ -253,7 +253,7 @@ class WaitForCar(State):
             self.prev_frame = frame
             return frame, self
 
-        motion_frame, motion = detectMotion(frame, self.prev_frame, bounds=(400, 450, 400, 0))
+        motion_frame, motion = detectMotion(frame, self.prev_frame, bounds=(400, 450, 450, 0))
         self.prev_frame = frame
 
         if self.waiting_started:
