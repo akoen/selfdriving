@@ -11,7 +11,6 @@ from std_msgs.msg import String
 import cv2
 import rospy
 import sys
-import time
 
 from helpers import *
 import roslib
@@ -254,7 +253,7 @@ class WaitForCar(State):
             self.prev_frame = frame
             return frame, self
 
-        motion_frame, motion = detectMotion(frame, self.prev_frame, bounds=(400, 450, 400, 0))
+        motion_frame, motion = detectMotion(frame, self.prev_frame, bounds=(400, 450, 450, 0))
         self.prev_frame = frame
 
         if self.waiting_started:
@@ -274,9 +273,8 @@ class WaitForCar(State):
 
 
 def main(args):
-    rospy.init_node('state_PID_runner', anonymous=True)
     ic = Selfdriving()
-
+    rospy.init_node('image_converter', anonymous=True)
     try:
         rospy.spin()
         return
