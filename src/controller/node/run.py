@@ -41,7 +41,7 @@ class Selfdriving:
         self.image_sub = rospy.Subscriber(
             "/R1/pi_camera/image_raw", Image, self.callback)
 
-        self.state = DriveWithPID()
+        self.state = InitialTurn()
 
         self.waiting = False
         self.waiting_started = False
@@ -86,12 +86,13 @@ class State(ABC):
         pass
 
 class DriveWithPID(State):
-    num_crosswalks = 2
+    num_crosswalks = 0
 
     def __init__(self):
-        self.angle_control = PID(0.8, 0.5, 0.8)
+        # self.angle_control = PID(0.8, 0.5, 0.8)
+        self.angle_control = PID(1.6, 1, 1.6)
         self.angle_control.send(None)  # Initialize
-        self.offset_control = PID(0.7, 0.5, 0)
+        self.offset_control = PID(1.4, 1, 0)
         self.offset_control.send(None)  # Initialize
         self.PID_value = -0
 
@@ -126,7 +127,7 @@ class DriveWithPID(State):
         steer_angle, offset, lane_lines, frame_out = lane_follow.detect_lane(
             frame)
 
-        move.linear.x = 0.3 if time < self.speeding_end_time else 0.1
+        move.linear.x = 0.3 if time < self.speeding_end_time else 0.2
 
         if steer_angle is not None:
             self.PID_value = self.angle_control.send(
@@ -142,6 +143,7 @@ class WaitForPedestrian(State):
     def __init__(self):
         self.waiting_started = False
         self.prev_frame = None
+        self.start_time = rospy.get_time()
 
     @property
     def name(self):
@@ -150,7 +152,7 @@ class WaitForPedestrian(State):
     def run(self, frame, move):
         # Wait for car to stop
         time = rospy.get_time()
-        while time < self.startTime + 0.4:
+        while time < self.start_time + 0.4:
             self.prev_frame = frame
             return frame, self
 
@@ -214,11 +216,28 @@ class InsideTurn(State):
             move.linear.x = -0.2
             move.angular.z = 1.5
             return frame, self
-        elif time < 5:
+        elif time < 4:
             move.linear.x = 0.2
             return frame, self
         else:
             return frame, WaitForCar()
+
+class PostCarTurn(State):
+    @property
+    def name(self):
+        return "Post Car Turn"
+
+    def __init__(self):
+        self.start_time = rospy.get_time()
+
+    def run(self, frame, move):
+        time = rospy.get_time() - self.start_time
+        if time < 0.6:
+            move.linear.x = 0.2
+            move.angular.z = 1.3
+            return frame, self
+        else:
+            return frame, DriveWithPID()
 
 class WaitForCar(State):
     @property
@@ -236,7 +255,7 @@ class WaitForCar(State):
             self.prev_frame = frame
             return frame, self
 
-        motion_frame, motion = detectMotion(frame, self.prev_frame, bounds=(400, 400, 500, 0))
+        motion_frame, motion = detectMotion(frame, self.prev_frame, bounds=(400, 450, 400, 0))
         self.prev_frame = frame
 
         if self.waiting_started:
@@ -244,7 +263,7 @@ class WaitForCar(State):
                 print("Moving")
             else:
                 print("Exiting")
-                return motion_frame, DriveWithPID()
+                return motion_frame, PostCarTurn()
         else:
             if motion:
                 self.waiting_started = True
