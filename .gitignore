@@ -230,6 +230,9 @@ qtcreator-*
 # Catkin custom files
 CATKIN_IGNORE
 
+# video
+./src/controller/node/pictures/output.avi
+
 # End of https://www.toptal.com/developers/gitignore/api/python,ros,cmake
 
 

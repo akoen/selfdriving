@@ -10,7 +10,7 @@
         >
   </node>
   <node pkg="controller"
-        type="plate_recognition.py"
+        type="plate_recognition_pre_single_imshow.py"
         name="plate_recognition"
         output="screen"
         >
