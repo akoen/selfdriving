@@ -39,27 +39,17 @@ lv = 90 # Lower Value
 # mb = 1 # Median Blur, 13
 high_cntr_thresh_y = 575
 low_cntr_thresh_y = 450
-<<<<<<< HEAD
 high_cntr_thresh_x_right = 1275
 low_cntr_thresh_x_right = 1000
 high_cntr_thresh_x_left = 300
 low_cntr_thresh_x_left = 3
 plate_cntr_area_low_thresh = 5500 # 6500 good (spotty on right)
-=======
-high_cntr_thresh_x = 1200
-low_cntr_thresh_x = 5
-plate_cntr_area_low_thresh = 6500 # increasing this helped to only capture plate when close (very close since it's pretty high)
->>>>>>> fa8b55d20d3ef8d891e4227586aa77b967b1cfe7
 plate_cntr_area_high_thresh = 100000 # infinite
 lower_hsv = np.array([lh,ls,lv])
 upper_hsv = np.array([uh,us,uv])
 font = cv.FONT_HERSHEY_SIMPLEX
 initial_dilate_kernel = np.ones((17,17),np.uint8) # dilation kernel
-<<<<<<< HEAD
-model_dilate_kernel = np.ones((1,1),np.uint8)
-=======
 model_dilate_kernel = np.ones((2,2),np.uint8)
->>>>>>> fa8b55d20d3ef8d891e4227586aa77b967b1cfe7
 
 class plate_recognizer():
 
@@ -71,16 +61,9 @@ class plate_recognizer():
         
         self.timer_started = False
         self.timer = 0 # float seconds
-<<<<<<< HEAD
         self.timer_elapsed_threshold = 5 # seconds
         self.plates_in_duration = []
 
-=======
-        self.timer_elapsed_threshold = 1 # seconds
-        self.plates_in_duration = []
-
-    
->>>>>>> fa8b55d20d3ef8d891e4227586aa77b967b1cfe7
     def detect_plate_in_image(self, img):
         plate = 0
         plate_area = 0
@@ -98,35 +81,22 @@ class plate_recognizer():
         if len(contours_edge) != 0: # prevent indexing errors when no contour found
             for cntr in contours_edge:
                 x_cntr, y_cntr, width_cntr, height_cntr = cv.boundingRect(cntr)
-<<<<<<< HEAD
                 # check whether contour in acceptable area of screen           
                 if (y_cntr > low_cntr_thresh_y and y_cntr+height_cntr < high_cntr_thresh_y and x_cntr > low_cntr_thresh_x_left and x_cntr+width_cntr < high_cntr_thresh_x_left) \
                     or (y_cntr > low_cntr_thresh_y and y_cntr+height_cntr < high_cntr_thresh_y and x_cntr > low_cntr_thresh_x_right and x_cntr + width_cntr < high_cntr_thresh_x_right):
-=======
-                # check whether contour in acceptable area of screen
-                #TODO: probably want two areas, one for the plates on the left, one for the plate(s) on the right
-                if y_cntr > low_cntr_thresh_y and y_cntr+height_cntr < high_cntr_thresh_y and x_cntr > low_cntr_thresh_x and x_cntr < high_cntr_thresh_x:
->>>>>>> fa8b55d20d3ef8d891e4227586aa77b967b1cfe7
                     largest_contour = cntr
                     plate_cntr_found = True
                     break
                 
         img_copy = copy.deepcopy(img)
-<<<<<<< HEAD
         cv.rectangle(img_copy,(low_cntr_thresh_x_left,low_cntr_thresh_y),(high_cntr_thresh_x_left,high_cntr_thresh_y), (0,0,255),2)
         cv.rectangle(img_copy,(low_cntr_thresh_x_right,low_cntr_thresh_y),(high_cntr_thresh_x_right,high_cntr_thresh_y), (0,0,255),2)
-=======
-        cv.rectangle(img_copy,(low_cntr_thresh_x,low_cntr_thresh_y),(high_cntr_thresh_x,high_cntr_thresh_y), (0,0,255),2)
->>>>>>> fa8b55d20d3ef8d891e4227586aa77b967b1cfe7
         
         if plate_cntr_found:
             # accept contour only if has certain area
             x,y,width,height = cv.boundingRect(largest_contour) # coordinates of largest contour
             largest_contour_area = width*height
-<<<<<<< HEAD
             # TODO: maybe two area thresholds, one for left and one for right (right one would be smaller than left one)
-=======
->>>>>>> fa8b55d20d3ef8d891e4227586aa77b967b1cfe7
             if largest_contour_area > plate_cntr_area_low_thresh and largest_contour_area < plate_cntr_area_high_thresh:
                 cv.drawContours(img_copy, [largest_contour], -1, (0,255,0),2)
                 plate = img[y:y+height,x:x+width] # crop to isolate plate
@@ -143,7 +113,6 @@ class plate_recognizer():
         plate_areas = np.asarray([self.plates_in_duration[i][1] for i in range(len(self.plates_in_duration))])
         plate_areas_sorted = list(reversed(plate_areas.argsort())) # index of max area is 0th element, descending
         plate = self.plates_in_duration[plate_areas_sorted[0]][0]
-<<<<<<< HEAD
         plate_area = plate_areas[plate_areas_sorted[0]] # area of plate with max area
         
         print(f"plate areas: {plate_areas}")
@@ -153,16 +122,6 @@ class plate_recognizer():
             cv.waitKey(3)
 
         return plate, plate_area
-=======
-        
-        print(f"plate areas: {plate_areas}")
-        print(f"chosen plate shape: {plate.shape}")
-
-        cv.imshow("plate", plate)
-        cv.waitKey(3)
-        
-        return plate
->>>>>>> fa8b55d20d3ef8d891e4227586aa77b967b1cfe7
 
     def process_plate(self, plate):
         # mask blue
@@ -246,10 +205,7 @@ class plate_recognizer():
 
         # isolate characters
         chars = []
-<<<<<<< HEAD
         count = 0
-=======
->>>>>>> fa8b55d20d3ef8d891e4227586aa77b967b1cfe7
         for c in range(len(char_bounding_rects)):
             x_c = char_bounding_rects[c][0]
             y_c = char_bounding_rects[c][1]
@@ -257,15 +213,11 @@ class plate_recognizer():
             height_c = char_bounding_rects[c][3]
             padding = 1 # additional pixels to include, for if we crop in too much
             char = plate[y_c-padding:y_c+height_c+padding,x_c-padding:x_c+width_c+padding] # cropped char from plate
-<<<<<<< HEAD
             count += 1
             chars.append(char)
             cv.imshow(f"char{count}", char)
 
         cv.waitKey(3)
-=======
-            chars.append(char)
->>>>>>> fa8b55d20d3ef8d891e4227586aa77b967b1cfe7
 
         return chars
 
@@ -273,14 +225,10 @@ class plate_recognizer():
         # predict characters
         predictions = []
         for k in chars:
-<<<<<<< HEAD
             # TODO: experiment with smoothing and sharpening
             char_img = cv.erode(cv.cvtColor(k,cv.COLOR_BGR2GRAY),model_dilate_kernel,iterations=1) # helps "sharpen" letters, can experment with kernel size
             sharpen_kernel = np.array([[0,-1,0], [-1,5,-1], [0,-1,-0]])
-            char_img_sharp = 
-=======
-            char_img = cv.erode(cv.cvtColor(k,cv.COLOR_BGR2GRAY),model_dilate_kernel,iterations=1) # helps "sharpen" letters, can experment with kernel size
->>>>>>> fa8b55d20d3ef8d891e4227586aa77b967b1cfe7
+            # char_img_sharp = 
             char_img_resized = cv.resize(char_img, (50,80)) # resize for network
             prediction = [self.conv_model.predict(np.expand_dims(char_img_resized,axis=0))[0]]
             predictions.append(prediction)
@@ -316,7 +264,6 @@ def main(args):
         except CvBridgeError as e:
             print(e)
 
-        # TODO: could also try continuous plates 
         # if img contains plate and last image contains plate, add to buffer, as soon as get image that doesn't contain plate when last img did contain plate, process buffer)
         if plate_found and pr.timer_started == False: # first plate in sequence
             print("started timer")
@@ -332,7 +279,6 @@ def main(args):
         
         elif pr.timer_started and rospy.get_time() - pr.timer >= pr.timer_elapsed_threshold: # if timer has elapsed
             print('processing plate batch')
-<<<<<<< HEAD
             plate, plate_area = pr.get_best_plate() # get plate (in duration) with largest area
             
             if plate_area == 0:
@@ -340,9 +286,6 @@ def main(args):
                 pr.timer_started = False
                 continue # beginning of while True
 
-=======
-            plate = pr.get_best_plate() # get plate (in duration) with largest area
->>>>>>> fa8b55d20d3ef8d891e4227586aa77b967b1cfe7
             bounding_rects_cropped = pr.process_plate(plate) # get bounding rects
             chars = pr.process_characters(bounding_rects_cropped, plate) # get char bounding rects
             prediction = pr.predict_characters(chars, plate) # get final prediction
@@ -351,13 +294,6 @@ def main(args):
             pr.timer_started = False # reset timer
         
         # else, no plate was found, do nothing
-<<<<<<< HEAD
-
-        # show all data on image
-        img_copy = copy.deepcopy(img)
-
-=======
->>>>>>> fa8b55d20d3ef8d891e4227586aa77b967b1cfe7
 
 if __name__ == '__main__':
     main(sys.argv)
