@@ -13,13 +13,8 @@ import rospy
 import sys
 
 from helpers import *
-
 import roslib
 roslib.load_manifest('controller')
-
-
-GRAYSCALE_THRESHOLD = 254
-
 
 def PID(kp, ki, kd):
     value = 0
@@ -31,7 +26,6 @@ def PID(kp, ki, kd):
         value = kp*error + (I+ki*error) + kd*(error-prev_error)
         prev_error = error
 
-
 class Selfdriving:
     def __init__(self):
         # self.image_pub = rospy.Publisher("image_topic_2",Image)
@@ -42,11 +36,7 @@ class Selfdriving:
             "/R1/pi_camera/image_raw", Image, self.callback)
 
         self.state = InitialTurn()
-
-        self.waiting = False
-        self.waiting_started = False
-        # self.wait_last_time = -10
-        self.speeding_end_time = 0
+        # self.state = DriveWithPID()
 
     def callback(self, data):
         try:
@@ -91,6 +81,7 @@ class DriveWithPID(State):
     def __init__(self):
         # self.angle_control = PID(0.8, 0.5, 0.8)
         self.angle_control = PID(1.6, 1, 1.6)
+        # self.angle_control = PID(2, 1, 1)
         self.angle_control.send(None)  # Initialize
         self.offset_control = PID(1.4, 1, 0)
         self.offset_control.send(None)  # Initialize
@@ -123,6 +114,7 @@ class DriveWithPID(State):
                 return frame, InsideTurn()
             else:
                 return frame, WaitForPedestrian()
+            # return frame, WaitForPedestrian()
 
         steer_angle, offset, lane_lines, frame_out = lane_follow.detect_lane(
             frame)
@@ -222,7 +214,7 @@ class InsideTurn(State):
             move.linear.x = -0.2
             move.angular.z = 1.5
             return frame, self
-        elif time < 4:
+        elif time < 4.5:
             move.linear.x = 0.2
             return frame, self
         else:
@@ -238,9 +230,9 @@ class PostCarTurn(State):
 
     def run(self, frame, move):
         time = rospy.get_time() - self.start_time
-        if time < 0.6:
+        if time < 1.6:
             move.linear.x = 0.2
-            move.angular.z = 1.3
+            move.angular.z = 1
             return frame, self
         else:
             return frame, DriveWithPID()
