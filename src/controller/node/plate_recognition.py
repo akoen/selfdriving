@@ -70,10 +70,11 @@ class plate_recognizer():
         # self.camera_callback = rospy.Subscriber("/R1/pi_camera/image_raw",Image,self.camera_callback)
         self.camera_instance = "/R1/pi_camera/image_raw"
         self.conv_model = keras.models.load_model('/home/fizzer/ros_ws/src/controller/node/conv_model_74k')
+        # self.conv_model = keras.models.load_model('/home/fizzer/ros_ws/src/controller/node/conv_model_74k_generated')
 
         self.timer_started = False
         self.timer = 0 # float seconds
-        self.timer_elapsed_threshold = 3 # seconds
+        self.timer_elapsed_threshold = 3.5 # seconds
         self.plates_in_duration = []
 
         time.sleep(1) # wait for node init
