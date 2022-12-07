@@ -64,9 +64,20 @@ class plate_recognizer():
         self.timer_elapsed_threshold = 5 # seconds
         self.plates_in_duration = []
 
+        # image data
+        self.largest_contour = []
+        self.plate = 0
+        self.plate_area = 0
+        self.plate_mask = 0
+        self.contours_plate = []
+        self.char_bounding_rects = []
+        self.chars = []
+
+    
     def detect_plate_in_image(self, img):
         plate = 0
-        plate_area = 0
+        plate_area = -1
+        acceptable_contour_position = False
         plate_cntr_found = False
 
         # plate mask
@@ -85,26 +96,19 @@ class plate_recognizer():
                 if (y_cntr > low_cntr_thresh_y and y_cntr+height_cntr < high_cntr_thresh_y and x_cntr > low_cntr_thresh_x_left and x_cntr+width_cntr < high_cntr_thresh_x_left) \
                     or (y_cntr > low_cntr_thresh_y and y_cntr+height_cntr < high_cntr_thresh_y and x_cntr > low_cntr_thresh_x_right and x_cntr + width_cntr < high_cntr_thresh_x_right):
                     largest_contour = cntr
-                    plate_cntr_found = True
+                    acceptable_contour_position = True
                     break
-                
-        img_copy = copy.deepcopy(img)
-        cv.rectangle(img_copy,(low_cntr_thresh_x_left,low_cntr_thresh_y),(high_cntr_thresh_x_left,high_cntr_thresh_y), (0,0,255),2)
-        cv.rectangle(img_copy,(low_cntr_thresh_x_right,low_cntr_thresh_y),(high_cntr_thresh_x_right,high_cntr_thresh_y), (0,0,255),2)
         
-        if plate_cntr_found:
+        if acceptable_contour_position:
             # accept contour only if has certain area
             x,y,width,height = cv.boundingRect(largest_contour) # coordinates of largest contour
             largest_contour_area = width*height
             # TODO: maybe two area thresholds, one for left and one for right (right one would be smaller than left one)
             if largest_contour_area > plate_cntr_area_low_thresh and largest_contour_area < plate_cntr_area_high_thresh:
-                cv.drawContours(img_copy, [largest_contour], -1, (0,255,0),2)
+                self.largest_contour = largest_contour
                 plate = img[y:y+height,x:x+width] # crop to isolate plate
                 plate_area = height*width
-
-        # out.write(img_copy)
-        cv.imshow("contours with bounds",img_copy)
-        cv.waitKey(3)
+                plate_cntr_found = True
 
         return plate_cntr_found, plate, plate_area
 
@@ -114,12 +118,9 @@ class plate_recognizer():
         plate_areas_sorted = list(reversed(plate_areas.argsort())) # index of max area is 0th element, descending
         plate = self.plates_in_duration[plate_areas_sorted[0]][0]
         plate_area = plate_areas[plate_areas_sorted[0]] # area of plate with max area
-        
+        self.plate_area = plate_area
+        self.plate = plate
         print(f"plate areas: {plate_areas}")
-
-        if(plate_area!=0):
-            cv.imshow("plate", plate)
-            cv.waitKey(3)
 
         return plate, plate_area
 
@@ -127,14 +128,12 @@ class plate_recognizer():
         # mask blue
         hsv_plate = cv.cvtColor(plate, cv.COLOR_BGR2HSV)
         mask_plate = cv.inRange(hsv_plate,lower_hsv_plate,upper_hsv_plate)
-        cv.imshow("mask plate",mask_plate)
+        self.mask_plate = mask_plate
 
         # get contours (no erode seems ok)
         contours_plate, hierarchy = cv.findContours(mask_plate,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
         contours_plate = sorted(contours_plate,key=cv.contourArea,reverse=True)
-        plate_copy = copy.deepcopy(plate)
-        cv.drawContours(plate_copy,contours_plate,-1,(0,255,0),1)
-        cv.imshow("contours plate",plate_copy)         
+        self.contours_plate = contours_plate
         
         # contour's bounding rectangles
         bounding_rects = []
@@ -154,7 +153,6 @@ class plate_recognizer():
             if x_i == 0 or x_i + width_i == plate_width or x_i+width_i >= plate_width - hystersis:
                 bounding_rects_cropped.remove(i)
 
-        cv.waitKey(3)
         return bounding_rects_cropped
 
     def process_characters(self, bounding_rects_cropped, plate):
@@ -165,9 +163,9 @@ class plate_recognizer():
         # split large contours (when blue bleeds between letters)
         bounding_rects_split = copy.deepcopy(bounding_rects_cropped)
         max_rect_index = max_area_indicies[0]
-        max_rect_area = areas[max_rect_index]
-        split_rectangle_threshold = 1.5 # multiplication factor
-        second_max_rect_area = areas[max_area_indicies[1]]
+        # max_rect_area = areas[max_rect_index]
+        # split_rectangle_threshold = 1.5 # multiplication factor
+        # second_max_rect_area = areas[max_area_indicies[1]]
         
         # if max_rect_area >= split_rectangle_threshold*second_max_rect_area: # requires tweaking threshold, more finnickey
         if len(areas) <= 3: # if only three contours
@@ -189,7 +187,6 @@ class plate_recognizer():
         max_area_indicies_split = list(reversed(areas_split.argsort())) # index of max area is 0th element, descending
 
         # largest four bounding rectangles
-        plate_rect_display = copy.deepcopy(plate)
         char_bounding_rects = []
         for k in range(4):
             rect_idx = max_area_indicies_split[k]
@@ -198,14 +195,12 @@ class plate_recognizer():
             width_i = bounding_rects_split[rect_idx][0][2]
             height_i = bounding_rects_split[rect_idx][0][3]
             char_bounding_rects.append([x_i,y_i,width_i,height_i])
-            cv.rectangle(plate_rect_display,(x_i,y_i+height_i),(x_i+width_i,y_i),(0,0,255),1) # (top left), (bottom right)
-        
+
         char_bounding_rects.sort(key=lambda char_bounding_rects : char_bounding_rects[0]) # sort based on x value, lowest = leftmost = 0th
-        cv.imshow("char bounding rectangles",plate_rect_display)
+        self.char_bounding_rects = char_bounding_rects
 
         # isolate characters
         chars = []
-        count = 0
         for c in range(len(char_bounding_rects)):
             x_c = char_bounding_rects[c][0]
             y_c = char_bounding_rects[c][1]
@@ -213,11 +208,9 @@ class plate_recognizer():
             height_c = char_bounding_rects[c][3]
             padding = 1 # additional pixels to include, for if we crop in too much
             char = plate[y_c-padding:y_c+height_c+padding,x_c-padding:x_c+width_c+padding] # cropped char from plate
-            count += 1
             chars.append(char)
-            cv.imshow(f"char{count}", char)
-
-        cv.waitKey(3)
+        
+        self.chars = chars
 
         return chars
 
@@ -233,10 +226,7 @@ class plate_recognizer():
 
         max_predictions = [np.argmax(i) for i in predictions]
         max_predictions_chars = [chr(i-10+65) if i >= 11 else str(i) for i in max_predictions]
-        cv.putText(plate,'[' + max_predictions_chars[0] + ',' + max_predictions_chars[1] + ',' + max_predictions_chars[2] + ',' + max_predictions_chars[3] + ']', (1,10), font, 0.5, (255,255,255), 1, cv.LINE_AA)
-        cv.imshow("plate", plate)
 
-        cv.waitKey(3)
         return max_predictions_chars
 
 
@@ -287,7 +277,7 @@ def main(args):
 
             bounding_rects_cropped = pr.process_plate(plate) # get bounding rects
             chars = pr.process_characters(bounding_rects_cropped, plate) # get char bounding rects
-            prediction = pr.predict_characters(chars, plate) # get final prediction
+            predictions = pr.predict_characters(chars, plate) # get final prediction
 
             pr.plates_in_duration = [] # reset plate buffer
             pr.timer_started = False # reset timer
@@ -296,6 +286,37 @@ def main(args):
 
         # show all data on image
         img_copy = copy.deepcopy(img)
+        cv.rectangle(img_copy,(low_cntr_thresh_x_left,low_cntr_thresh_y),(high_cntr_thresh_x_left,high_cntr_thresh_y), (0,0,255),2)
+        cv.rectangle(img_copy,(low_cntr_thresh_x_right,low_cntr_thresh_y),(high_cntr_thresh_x_right,high_cntr_thresh_y), (0,0,255),2)
+        
+        if plate_found:
+            cv.drawContours(img_copy, [pr.largest_contour], -1, (0,255,0),2)
+            if pr.plate_area != 0:
+                img_copy[0:100, 0:100] = np.ones((100,100,3))
+                plate_copy = copy.deepcopy(pr.plate)
+                plate_rect_display = copy.deepcopy(plate)
+                cv.drawContours(plate_copy,pr.contours_plate,-1,(0,255,0),1) # plate contours
+                for k in range(4): # char bounding rectangles on plate
+                    x_i = pr.char_bounding_rects[k][0]
+                    y_i = pr.char_bounding_rects[k][1]
+                    width_i = pr.char_bounding_rects[k][2]
+                    height_i = pr.char_bounding_rects[k][3]
+                    cv.rectangle(plate_rect_display,(x_i,y_i+height_i),(x_i+width_i,y_i),(0,0,255),1) # (top left), (bottom right)
+                cv.putText(plate_copy,'[' + predictions[0] + ',' + predictions[1] + ',' + predictions[2] + ',' + predictions[3] + ']', (1,15), font, 0.5, (255,255,255), 1, cv.LINE_AA)
+
+                padding = 5
+                plate_height, plate_width, _ = pr.plate.shape
+                img_copy[padding:plate_height+padding, padding:plate_width+padding, :] = pr.plate # [low_y:high_y, low_x:high_x, channels]
+                img_copy[padding:plate_height+padding, plate_width+padding:plate_width*2+padding, :] = plate_copy
+                img_copy[padding:plate_height+padding, plate_width*2+padding:plate_width*3+padding, :] = plate_rect_display
+                # add self.plate_mask to img_copy - for this, we'd need to convert binary to rgb to get same number of channels
+                
+                for i in range(len(pr.chars)):
+                    pass
+                    # add character to img_copy
+
+        cv.imshow("plate processing", img_copy)
+        cv.waitKey(3)
 
 
 if __name__ == '__main__':
