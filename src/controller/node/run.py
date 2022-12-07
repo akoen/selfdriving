@@ -156,7 +156,7 @@ class WaitForPedestrian(State):
             self.prev_frame = frame
             return frame, self
 
-        frame_diff_thresh, motion = detectMotion(frame, self.prev_frame, bounds=(300,300,0,0))
+        frame_diff_thresh, motion = detectMotion(frame, self.prev_frame, bounds=(200,200,0,0))
         self.prev_frame = frame
 
         if self.waiting_started:
@@ -180,19 +180,25 @@ class WaitForPedestrian(State):
         return frame_diff_thresh, self
 
 class InitialTurn(State):
+    start_time = 3
     @property
     def name(self):
         return "InitialTurn"
 
     def run(self, frame, move):
+
         # if not hasattr(self, "start_time"): self.start_time = rospy.get_time()
         # time = rospy.get_time() - self.start_time
-        time = rospy.get_time() - 1.057 # physics unpaused time
-        print(time)
-        if time < 1:
-            move.linear.x = 0.3
+
+        if rospy.get_time() < InitialTurn.start_time:
             return frame, self
-        elif time < 3:
+
+        time = rospy.get_time() - InitialTurn.start_time # physics unpaused time
+        print(time)
+        if time < 0.75:
+            move.linear.x = 0.2
+            return frame, self
+        elif time < 2.5:
             move.linear.x = 0.2
             move.angular.z = 1
             return frame, self
