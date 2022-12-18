@@ -69,7 +69,7 @@ class plate_recognizer():
         self.bridge = CvBridge()
         # self.camera_callback = rospy.Subscriber("/R1/pi_camera/image_raw",Image,self.camera_callback)
         self.camera_instance = "/R1/pi_camera/image_raw"
-        self.conv_model = keras.models.load_model('/home/fizzer/ros_ws/src/controller/node/conv_model_74k')
+        self.conv_model = keras.models.load_model('/home/fizzer/ros_ws/src/controller/node/conv_model_74k_40epochs')
 
         self.timer_started = False
         self.timer = 0 # float seconds
