@@ -73,7 +73,7 @@ class plate_recognizer():
 
         self.timer_started = False
         self.timer = 0 # float seconds
-        self.timer_elapsed_threshold = 3 # seconds
+        self.timer_elapsed_threshold = 4 # seconds
         self.plates_in_duration = []
 
         time.sleep(1) # wait for node init
@@ -133,7 +133,7 @@ class plate_recognizer():
         print(f"plate areas: {plate_areas}")
 
         if(plate_area!=0):
-            cv.imshow("plate", plate)
+            # cv.imshow("plate", plate)
             cv.waitKey(3)
 
         return plate, plate_area
@@ -142,12 +142,10 @@ class plate_recognizer():
         # mask blue
         hsv_plate = cv.cvtColor(plate, cv.COLOR_BGR2HSV)
         mask_plate = cv.inRange(hsv_plate,lower_hsv_plate,upper_hsv_plate)
-        cv.imshow("mask plate",mask_plate)
-
-        # get contours (no erode seems ok)
         contours_plate, hierarchy = cv.findContours(mask_plate,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
         contours_plate = sorted(contours_plate,key=cv.contourArea,reverse=True)
         plate_copy = copy.deepcopy(plate)
+        cv.imshow("mask plate",mask_plate)
         cv.drawContours(plate_copy,contours_plate,-1,(0,255,0),1)
         cv.imshow("contours plate",plate_copy)         
         
@@ -246,7 +244,7 @@ class plate_recognizer():
             # [[0,-1,0], [-1,5,-1], [0,-1,0]] not as good, but could work with binary mask
             char_img_sharp = cv.filter2D(char_blur, ddepth=-1, kernel=sharpen_kernel)
             binary_threshold = 65 # below this, black, above this, white
-            char_img_sharp = cv.threshold(char_img_sharp, binary_threshold, 255, cv.THRESH_BINARY)[1]
+            # char_img_sharp = cv.threshold(char_img_sharp, binary_threshold, 255, cv.THRESH_BINARY)[1] # uncomment
             # char_img_sharp = cv.GaussianBlur(char_img_sharp, (1,1),0)
 
             char_img_resized = cv.resize(char_img_sharp, (50,80)) # resize for network
@@ -257,8 +255,8 @@ class plate_recognizer():
             count += 1
 
         max_predictions = [np.argmax(i) for i in predictions]
-        max_predictions_chars = [chr(i-10+65) if i >= 11 else str(i) for i in max_predictions]
-        cv.putText(plate,'[' + max_predictions_chars[0] + ',' + max_predictions_chars[1] + ',' + max_predictions_chars[2] + ',' + max_predictions_chars[3] + ']', (1,10), font, 0.5, (255,255,255), 1, cv.LINE_AA)
+        max_predictions_chars = [chr(i-10+65) if i >= 10 else str(i) for i in max_predictions] # i>=11
+        cv.putText(plate,'[' + max_predictions_chars[0] + ',' + max_predictions_chars[1] + ',' + max_predictions_chars[2] + ',' + max_predictions_chars[3] + ']', (1,15), font, 0.5, (255,255,255), 1, cv.LINE_AA)
         cv.imshow("plate", plate)
 
         cv.waitKey(3)
